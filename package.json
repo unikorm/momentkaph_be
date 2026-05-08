@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc -w"
+    "compile": "tsc -w"
   },
   "keywords": [],
   "author": "",
