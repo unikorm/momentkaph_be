@@ -19,31 +19,32 @@ const VALID_GALLERY_TYPES = new Set([
 export async function cloudStorageHandler(
   _req: http.IncomingMessage,
   res: http.ServerResponse,
-  galleryType: string
+  galleryType: string,
+  requestId: string
 ): Promise<void> {
   if (!VALID_GALLERY_TYPES.has(galleryType)) {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Invalid gallery type' }));
+    res.writeHead(404);
+    res.end();
     return;
   }
 
   const cdnUrl = process.env.CLOUD_STORAGE_CDN_URL!.replace(/\/$/, '');
-  const keys   = await listObjects(`${galleryType}/`);
-  const images  = keys.filter(k => !k.endsWith('/'));
+  const keys = await listObjects(`${galleryType}/`);
+  const images = keys.filter(k => !k.endsWith('/'));
 
   const results: GalleryImage[] = await Promise.all(
     images.map(async (key) => {
-      const fullUrl   = `${cdnUrl}/${key}`;
+      const fullUrl = `${cdnUrl}/${key}`;
       const mobileUrl = fullUrl;
       const image: GalleryImage = { fullUrl, mobileUrl };
 
       try {
-        const buf  = await getObjectRange(key);
+        const buf = await getObjectRange(key);
         const size = getImageSize(buf);
         if (size) {
-          image.width       = size.width;
-          image.height      = size.height;
-          image.mobileWidth  = Math.floor(size.width / 3);
+          image.width = size.width;
+          image.height = size.height;
+          image.mobileWidth = Math.floor(size.width / 3);
           image.mobileHeight = Math.floor(size.height / 3);
         }
       } catch {

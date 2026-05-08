@@ -21,7 +21,6 @@ if (fs.existsSync(envPath)) {
 }
 
 const PORT = process.env.PORT || '3000';
-console.log(`Starting momentkaph_be on port ${PORT}...`);
 
 const mustBeHeaders: Record<string, string> = process.env.NODE_ENV !== 'production' ? {
   'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || 'http://localhost:4200',
@@ -39,24 +38,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const requestId = req.headers['x-request-id'] ?? 'no-request-id';
   const pathname = new URL(req.url ?? '/', `http://x`).pathname;
 
   try {
     const galleryMatch = pathname.match(/^\/cloud_storage\/([^/]+)$/);
     if (req.method === 'GET' && galleryMatch) {
-      await cloudStorageHandler(req, res, galleryMatch[1]);
+      await cloudStorageHandler(req, res, galleryMatch[1], requestId.toString());
       return;
     }
 
     if (req.method === 'POST' && pathname === '/email_sending') {
-      await emailHandler(req, res);
+      await emailHandler(req, res, requestId.toString());
       return;
     }
 
+    console.error(`[${requestId}] No handler for ${req.method} ${pathname}`);
     res.writeHead(404);
     res.end();
   } catch (err) {
-    console.error(err);
+    console.error(`[${requestId}]`, err);
     res.writeHead(500);
     res.end();
   }

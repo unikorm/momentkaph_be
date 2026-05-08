@@ -15,44 +15,46 @@ function readBody(req: http.IncomingMessage): Promise<unknown> {
   });
 }
 
-export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
   let data: unknown;
   try {
     data = await readBody(req);
   } catch {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+    console.error(`[${requestId}] Failed to read request body or parse JSON`);
+    res.writeHead(404);
+    res.end();
     return;
   }
 
   const errors = validateEmailForm(data);
   if (errors.length > 0) {
-    res.writeHead(422, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ errors }));
+    console.error(`[${requestId}] Validation errors:`, errors);
+    res.writeHead(404);
+    res.end();
     return;
   }
 
-  const body    = data as Record<string, string>;
-  const name    = body.name.trim();
-  const email   = body.email.trim().toLowerCase();
-  const phone   = body.phone.trim();
+  const body = data as Record<string, string>;
+  const name = body.name.trim();
+  const email = body.email.trim().toLowerCase();
+  const phone = body.phone.trim();
   const message = body.message.trim();
 
   const timestamp = new Date().toLocaleString('sk-SK', { timeZone: 'Europe/Bratislava' });
-  const html      = emailFormTemplate({ name, email, phone, message, timestamp });
+  const html = emailFormTemplate({ name, email, phone, message, timestamp });
 
   try {
     await sendEmail({
-      from:    process.env.RESEND_FROM_EMAIL!,
-      to:      process.env.CONTACT_FORM_RECIPIENT_EMAIL!,
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: process.env.RESEND_EMAIL_RECIPIENT!,
       subject: `New request from ${name} - momentkaph.sk`,
       html,
     });
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: true }));
+    res.writeHead(200);
+    res.end();
   } catch (err) {
-    console.error('Email send failed:', err instanceof Error ? err.message : err);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: false }));
+    console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
+    res.writeHead(400);
+    res.end();
   }
 }
