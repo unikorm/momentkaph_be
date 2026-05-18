@@ -2,8 +2,8 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { cloudStorageHandler } from './src/handlers/cloudStorage.js';
-import { emailHandler } from './src/handlers/email.js';
+import { cloudStorageHandler } from './handlers/cloudStorage.js';
+import { emailHandler } from './handlers/email.js';
 
 // Load .env before anything else
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
