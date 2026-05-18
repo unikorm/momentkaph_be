@@ -1,4 +1,4 @@
-export interface EmailTemplateData {
+interface EmailTemplateData {
   name: string;
   email: string;
   phone: string;
@@ -33,10 +33,10 @@ export function emailFormTemplate({ name, email, phone, message, timestamp }: Em
 <body>
 <div class="card">
   <h2>New request from ${esc(name)}</h2>
-  <div class="row"><div class="label">Name</div><div class="value">${esc(name)}</div></div>
-  <div class="row"><div class="label">Email</div><div class="value">${esc(email)}</div></div>
-  <div class="row"><div class="label">Phone</div><div class="value">${esc(phone)}</div></div>
-  <div class="row"><div class="label">Message</div><div class="value">${esc(message)}</div></div>
+  <div class="row"><div class="label">Name:</div><div class="value">${esc(name)}</div></div>
+  <div class="row"><div class="label">Email:</div><div class="value">${esc(email)}</div></div>
+  <div class="row"><div class="label">Phone:</div><div class="value">${esc(phone)}</div></div>
+  <div class="row"><div class="label">Message:</div><div class="value">${esc(message)}</div></div>
   <div class="footer">Sent at ${esc(timestamp)} &middot; momentkaph.sk</div>
 </div>
 </body>

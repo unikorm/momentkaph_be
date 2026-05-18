@@ -19,8 +19,8 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
   let data: unknown;
   try {
     data = await readBody(req);
-  } catch {
-    console.error(`[${requestId}] Failed to read request body or parse JSON`);
+  } catch (err) {
+    console.error(`[${requestId}] Failed to read request body or parse JSON`, err instanceof Error ? err.message : err);
     res.writeHead(404);
     res.end();
     return;
