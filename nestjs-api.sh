@@ -45,9 +45,7 @@ server {
     # add security headers to responses
     add_header Strict-Transport-Security "max-age=31536000" always; # enforce HTTPS for 1 year
     add_header X-Content-Type-Options "nosniff"; # prevents browsers from guessing MIME types and forces them to stick with the declared content type
-
-    # add caching headers for debugging and monitoring cache behavior -> for debugging purposes
-    add_header X-Cache-Status $upstream_cache_status always; # for debugging cache behavior; possible values: MISS (not in cache), BYPASS (cache bypassed), EXPIRED (cached response expired), STALE (stale response served due to backend failure), UPDATING (response is being updated in cache), HIT (cached response served)
+    add_header Cache-Control "public, max-age=86400, stale-while-revalidate=604800"; # cache-control header for clients; 1 day max-age, allow stale content for 7 days while revalidating in background
 
     # Proxy setup
     proxy_http_version 1.1; # use HTTP/1.1 to support keep-alive connections to backend
@@ -84,8 +82,6 @@ server {
         proxy_cache_valid 200 301 60d;          # cache successful responses for 60 days
         proxy_cache_valid 302 1h;              # cache temporary redirects for 1 hour
         proxy_cache_valid 404 1m;              # cache not found responses for 1 minute to prevent cache pollution
-
-        add_header Cache-Control "public, max-age=86400, stale-while-revalidate=604800"; # cache-control header for clients; 1 day max-age, allow stale content for 7 days while revalidating in background
 
         proxy_ignore_headers Cache-Control; # override whatever upstream says -> for better control over caching behavior
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504; # serve stale content if backend is down or returns error -> for better availability
