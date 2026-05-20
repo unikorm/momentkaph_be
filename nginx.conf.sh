@@ -5,7 +5,7 @@ error_log /var/log/nginx/error.log; # log file for errors
 
 events {
         worker_connections 1024; # default, 1 worker can handle 1024 simultaneous connections -> increase if you have lots of clients
-        use epoll;  # More efficient connection processing on Linux -> I/O multiplexing kernel system calls in event-driven architecture as nginx is build on, managing multiple I/O eventsin single event loop
+        use epoll;  # More efficient connection processing on Linux -> I/O multiplexing kernel system calls in event-driven architecture as nginx is build on, managing multiple I/O events in single event loop
         multi_accept on; # Accept multiple connections at once in 1 worker process
 }
 
