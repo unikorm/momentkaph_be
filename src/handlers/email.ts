@@ -1,13 +1,14 @@
 import type http from 'http';
 import { sendEmail } from '../lib/resend.js';
-import { validateContactForm } from '../lib/validate.js';
+import { validateContactForm, type ContactRequest } from '../lib/validate.js';
 import { emailFormTemplate } from '../templates/email.js';
 
+
 export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
-  let data: unknown; // simple JSON <key:string, value:string> expected, but we validate it thoroughly in the next step
+  let data: ContactRequest; // simple JSON <key:string, value:string> expected, but we validate it thoroughly in the next step
 
   try { // it is first line of defense against malicious payloads and malformed requests
-    data = await readBody(req);
+    data = await readBody(req) as ContactRequest; // we have to assert this because readBody returns unknown, but we'll validate it properly in the next step
   } catch (err) {
     console.error(`[${requestId}] Failed to read request body or parse JSON`, err instanceof Error ? err.message : err);
     res.writeHead(404);
