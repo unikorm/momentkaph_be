@@ -47,7 +47,7 @@ export interface FormData {
   email: string;
   phone: string;
   message: string;
-  checkMark?: string; // hidden honeypot field — should always be empty
+  approval?: string; // hidden honeypot field — should always be empty
 }
 
 
@@ -66,12 +66,12 @@ export function validateEmailForm(data: unknown): ValidationError[] {
     return [{ field: 'body', message: 'Request body must be a JSON object' }];
   }
 
-   const { name, email, phone, message, checkMark } = data as FormData;
+   const { name, email, phone, message, approval } = data as FormData;
   const errors: ValidationError[] = [];
 
   // --- Honeypot: bots fill hidden fields, humans don't ---
   // Return early and silently — don't tell bots they were caught
-  if (checkMark && String(checkMark).trim().length > 0) {
+  if (approval && String(approval).trim().length > 0) {
     return []; // Pretend success; log this server-side in reality
   }
 

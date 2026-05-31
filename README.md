@@ -2,60 +2,54 @@
 
 ## TypeScript Tooling
 
-Node speaks JavaScript. These three tools bridge the gap between your `.ts` source and Node — each differently.
-
----
-
-## `tsc` — Official TypeScript Compiler
-
-The only tool that actually **understands your types**. Does two things: type checking + emitting `.js` files to disk.
+Node speaks JavaScript. `tsc` bridges the gap — it type-checks your `.ts` source and emits `.js` files to `dist/`.
 
 ```
 .ts files  →  tsc  →  dist/*.js  →  node dist/index.js
 ```
 
-Runs **ahead-of-time** — before Node is involved at all.
-
 ```bash
-tsc            # type-check + emit .js to dist/
-tsc --noEmit   # type-check only, no files written — use this in CI
+npm run typecheck   # tsc --noEmit  — type-check only, no files written
+npm run build       # tsc           — type-check + emit to dist/
+npm run start       # node dist/index.js
+npm run fire-up     # typecheck → build → start
 ```
 
----
+## Diagrams
 
-## `ts-node` — Just-in-Time Compiler
+### Email
 
-Hooks into Node's loader and compiles TypeScript **on import**, in memory. No build step, but runs full type checking on every startup — slow.
+```mermaid
+flowchart TD
+    Client([Client / Frontend]) -->|"POST JSON"| ReadBody
 
+    subgraph handler["api/email.ts · emailHandler"]
+        ReadBody["readBody(req)<br/>collect chunks → JSON.parse"]
+        Extract["normalize fields<br/>trim · lowercase email"]
+        Build["build timestamp<br/>sk-SK / Europe-Bratislava"]
+    end
+
+    ReadBody -->|"parse error"| Res404a["writeHead(404) · end"]
+    ReadBody -->|"ok"| Validate
+
+    subgraph validate["lib/validate.ts · validateEmailForm"]
+        Validate{"validate body<br/>honeypot · name · email<br/>phone · message"}
+    end
+
+    Validate -->|"errors > 0"| Res404b["writeHead(404) · end"]
+    Validate -->|"valid (errors = 0)"| Extract
+    Extract --> Build
+
+    subgraph template["templates/email.ts · emailFormTemplate"]
+        Tmpl["esc() each field → HTML string"]
+    end
+    Build --> Tmpl --> SendEmail
+
+    subgraph resend["lib/resend.ts · sendEmail"]
+        SendEmail["https.request POST"]
+    end
+    SendEmail --> API([api.resend.com /emails])
+
+    API -->|"200"| Res200["writeHead(200) · end"]
+    API -->|"non-200 / network error"| Res400["writeHead(400) · end"]
 ```
-node src/index.ts
-  → ts-node intercepts .ts files
-  → compiles in memory (with type checking)
-  → hands JS to Node
-  → repeats for every import
-```
-
----
-
-## `tsx` — Fast Just-in-Time Stripper
-
-Same idea as `ts-node`, but uses esbuild and **skips type checking**. Just strips TypeScript syntax and runs. Fast.
-
-```
-node src/index.ts (via tsx)
-  → tsx intercepts .ts files
-  → strips types, no checking
-  → hands JS to Node instantly
-```
-
----
-
-## The Two Jobs
-
-| Job | Tool |
-|-----|------|
-| Type checking | `tsc` only |
-| Run code in dev | `tsx watch` |
-| Deploy | `tsc` → `node dist/index.js` |
-
-> **The rule:** checking types and running code are separate concerns. Keep them that way.
