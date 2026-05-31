@@ -3,46 +3,7 @@ interface ValidationError {
   message: string;
 }
 
-// RFC 5321 compliant enough for BE — stricter TLD requirement (2+ chars)
-// and no consecutive dots, which your FE regex missed
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-// BE phone validation: we care about digit count, not format aesthetics.
-// A human types "0944 250 021" or "+421944250021" — both are fine.
-// What we reject: strings with no real digits, or clearly fake sequences.
-const PHONE_ALLOWED_CHARS = /^[\d\s\+\-\(\)\.]{7,30}$/;
-
-function countDigits(s: string): number {
-  return (s.match(/\d/g) ?? []).length;
-}
-
-// Strip HTML tags and normalize whitespace — defend against XSS payloads
-// sneaking through into downstream rendering or email clients
-function sanitize(value: unknown): string {
-  if (typeof value !== 'string') return '';
-  return value
-    .replace(/<[^>]*>/g, '')       // strip HTML tags
-    .replace(/\s+/g, ' ')          // collapse whitespace
-    .trim();
-}
-
-// Detect suspiciously repetitive content like "aaaaaaaaaa" or "hahahahaha"
-// Works by checking if any single character dominates more than 60% of the string
-function isRepetitive(s: string): boolean {
-  if (s.length < 10) return false;
-  const freq: Record<string, number> = {};
-  for (const ch of s) freq[ch] = (freq[ch] ?? 0) + 1;
-  const maxFreq = Math.max(...Object.values(freq));
-  return maxFreq / s.length > 0.6;
-}
-
-// A rough check for strings that are clearly gibberish — no vowels at all
-// in a longer string is a strong spam signal
-function hasVowels(s: string): boolean {
-  return /[aeiouáéíóúäöüàèìòù]/i.test(s);
-}
-
-export interface FormData {
+export interface ContactRequest {
   name: string;
   email: string;
   phone: string;
@@ -50,71 +11,136 @@ export interface FormData {
   approval?: string; // hidden honeypot field — should always be empty
 }
 
+export type ParseResult =
+  | { status: 'ok'; value: ContactRequest }
+  | { status: 'invalid'; errors: ValidationError[] }
 
-// Safe string extraction with an early length guard.
-// We check raw length BEFORE trim() to avoid allocating memory
-// on a maliciously oversized payload — trim() on a 10MB string is expensive.
-function extractString(value: unknown, maxRawLength: number): string {
-  if (typeof value !== 'string') return '';
-  if (value.length > maxRawLength) return value.slice(0, maxRawLength + 1); // flag it as too long
-  return value.trim();
+export function validateContactForm(data: unknown): ParseResult {
+
+  // Guard against non-object bodies — curl -d "hello" style payloads.
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return { status: 'invalid', errors: [{ field: 'body', message: 'Request body must be a JSON object' }] };
+  }
+
+  const raw = data as Record<string, unknown>;
+
+  if (typeof raw.approval === 'string' && raw.approval.trim().length > 0) {
+    return { status: 'invalid', errors: [{ field: 'approval', message: 'Honeypot field must be empty' }] };
+  }
+
+  // Each field gets its own small parser: it returns the CLEAN value and pushes
+  // any problems into the shared list. Keeping each field's rules in one spot
+  // is most of what makes this readable.
+  const errors: ValidationError[] = [];
+  const name = parseName(raw.name, errors);
+  const email = parseEmail(raw.email, errors);
+  const phone = parsePhone(raw.phone, errors);
+  const message = parseMessage(raw.message, errors);
+
+  if (errors.length > 0) return { status: 'invalid', errors };
+
+  // We only get here when every field parsed cleanly, so this genuinely
+  // satisfies ContactRequest — no casting, no lying to the type system.
+  return { status: 'ok', value: { name, email, phone, message } };
 }
 
-export function validateEmailForm(data: unknown): ValidationError[] {
-  // Guard against non-object bodies — curl -d "hello" style attacks
-  if (!data || typeof data !== 'object' || Array.isArray(data)) {
-    return [{ field: 'body', message: 'Request body must be a JSON object' }];
-  }
-
-   const { name, email, phone, message, approval } = data as FormData;
-  const errors: ValidationError[] = [];
-
-  // --- Honeypot: bots fill hidden fields, humans don't ---
-  // Return early and silently — don't tell bots they were caught
-  if (approval && String(approval).trim().length > 0) {
-    return []; // Pretend success; log this server-side in reality
-  }
-
-  // --- Name ---
-  // Raw cap at 200 chars before trim to prevent memory games,
-  // then validate the trimmed result against actual business rules
-  const nameStr = extractString(name, 200);
-  if (nameStr.length < 3 || nameStr.length > 100) {
+// helpers
+function parseName(value: unknown, errors: ValidationError[]): string {
+  const name = normalize(value, 200); // raw-cap guards against giant payloads
+  if (name.length < 3 || name.length > 100) {
     errors.push({ field: 'name', message: 'Name must be 3–100 characters' });
   }
+  return name;
+}
 
-  // --- Email ---
-  const emailStr = extractString(email, 300).toLowerCase();
-  if (!emailStr) {
+function parseEmail(value: unknown, errors: ValidationError[]): string {
+  const email = normalize(value, 300).toLowerCase();
+  if (!email) {
     errors.push({ field: 'email', message: 'Email is required' });
-  } else if (emailStr.length > 254) {
-    // 254 is the RFC 5321 hard limit for email addresses
+  } else if (email.length > 254) { // RFC 5321 hard limit
     errors.push({ field: 'email', message: 'Email address is too long' });
-  } else if (!EMAIL_RE.test(emailStr)) {
+  } else if (!EMAIL_RE.test(email)) {
     errors.push({ field: 'email', message: 'Invalid email address' });
   }
+  return email;
+}
 
-  // --- Phone ---
-  const phoneStr = extractString(phone, 50);
-  if (!phoneStr) {
+function parsePhone(value: unknown, errors: ValidationError[]): string {
+  const phone = normalize(value, 50);
+  if (!phone) {
     errors.push({ field: 'phone', message: 'Phone is required' });
-  } else if (!PHONE_ALLOWED_CHARS.test(phoneStr)) {
-    // Rejects letters, special chars, SQL injection attempts, etc.
+  } else if (!PHONE_ALLOWED_CHARS.test(phone)) {
     errors.push({ field: 'phone', message: 'Phone contains invalid characters' });
-  } else if (countDigits(phoneStr) < 7) {
-    // Separating "wrong chars" from "too few digits" gives clearer errors
+  } else if (countDigits(phone) < 7) {
     errors.push({ field: 'phone', message: 'Phone number must contain at least 7 digits' });
   }
+  return phone;
+}
 
-  // --- Message ---
-  // Raw cap at 1500 before processing — double the business limit is a
-  // reasonable signal that something is wrong, not just a long message
-  const msgStr = extractString(message, 1500);
-  if (msgStr.length < 20) {
+function parseMessage(value: unknown, errors: ValidationError[]): string {
+  const message = normalize(value, 1500); // raw-cap well above the 700 limit
+
+  // 1. Length — the plain business rule. Bail before the heuristics, since
+  //    running spam checks on a too-short string is pointless.
+  if (message.length < 20) {
     errors.push({ field: 'message', message: 'Message must be at least 20 characters' });
-  } else if (msgStr.length > 700) {
+    return message;
+  }
+  if (message.length > 700) {
     errors.push({ field: 'message', message: 'Message must not exceed 700 characters' });
+    return message;
   }
 
-  return errors;
+  // 2. Repetition — "aaaaaaaa" or one char dominating the whole string. A real
+  //    enquiry never trips this; junk often does.
+  if (isRepetitive(message)) {
+    errors.push({ field: 'message', message: 'Message looks like spam (repetition)' });
+    return message;
+  }
+
+  // 3. Link flooding — the single most useful contact-form spam signal. A real
+  //    "can you shoot my wedding?" rarely has links; SEO/backlink spam is mostly
+  //    links. Allow one, reject on two or more.
+  if (countLinks(message) > 1) {
+    errors.push({ field: 'message', message: 'Message looks like spam (links)' });
+    return message;
+  }
+
+  return message;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_ALLOWED_CHARS = /^[\d\s+\-().]{7,30}$/;
+
+function countDigits(s: string): number {
+  return (s.match(/\d/g) ?? []).length;
+}
+
+function countLinks(s: string): number {
+  return (s.match(/https?:\/\/|www\./gi) ?? []).length;
+}
+
+function isRepetitive(s: string): boolean {
+  if (s.length < 10) return false; // short strings look lopsided even when fine
+  const freq: Record<string, number> = {};
+  for (const ch of s) freq[ch] = (freq[ch] ?? 0) + 1;
+  const maxFreq = Math.max(...Object.values(freq));
+  return maxFreq / s.length > 0.6;
+}
+
+// One normalizer for every field: reject non-strings, cap raw length BEFORE
+// trimming (so trim() never runs across a 10 MB payload), then trim and
+// collapse whitespace runs.
+//
+// What it deliberately does NOT do: strip or escape HTML. Escaping belongs to
+// whoever RENDERS the value, because the correct escaping depends on where the
+// text lands — an HTML email needs HTML-entity escaping, a plain-text email or
+// a log line needs none. Baking "strip <tags>" in here would silently mangle a
+// message that legitimately contains "<3" or "x < y", and would still be the
+// wrong tool the day you add a plain-text email. So we keep meaning here and
+// push escaping to the boundary — see escapeHtml below.
+function normalize(value: unknown, maxRawLength: number): string {
+  if (typeof value !== 'string') return '';
+  const capped = value.length > maxRawLength ? value.slice(0, maxRawLength + 1) : value;
+  return capped.trim().replace(/\s+/g, ' ');
 }

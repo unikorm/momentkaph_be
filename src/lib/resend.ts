@@ -13,9 +13,9 @@ interface SendEmailResponse {
 
 export function sendEmail(payload: EmailPayload): Promise<SendEmailResponse> {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify(payload);
+    const body = JSON.stringify(payload); // actual HTML content
 
-    const req = https.request(
+    const req = https.request( // Resend API docs: https://resend.com/docs/api-reference/emails/send-email
       {
         hostname: 'api.resend.com',
         path: '/emails',

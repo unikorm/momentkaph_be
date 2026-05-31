@@ -6,15 +6,6 @@ interface EmailTemplateData {
   timestamp: string;
 }
 
-function esc(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 export function emailFormTemplate({ name, email, phone, message, timestamp }: EmailTemplateData): string {
   return `<!DOCTYPE html>
 <html lang="sk">
@@ -41,4 +32,15 @@ export function emailFormTemplate({ name, email, phone, message, timestamp }: Em
 </div>
 </body>
 </html>`;
+}
+
+
+// helpers
+function esc(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
