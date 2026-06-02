@@ -46,7 +46,7 @@ export function validateContactForm(data: ContactRequest): ParseResult {
 
 // helpers
 function parseName(value: string, errors: ValidationError[]): string {
-  const name = normalize(value, 100); // raw-cap guards against giant payloads
+  const name = normalize(value, 100);
   if (name.length < 3 || name.length > 100) {
     errors.push({ field: 'name', message: 'Name must be 3–100 characters' });
   }
@@ -54,7 +54,7 @@ function parseName(value: string, errors: ValidationError[]): string {
 }
 
 function parseEmail(value: string, errors: ValidationError[]): string {
-  const email = normalize(value, 255).toLowerCase();
+  const email = normalize(value, 254).toLowerCase();
   if (!email) {
     errors.push({ field: 'email', message: 'Email is required' });
   } else if (email.length > 254) { // RFC 5321 hard limit
@@ -78,7 +78,7 @@ function parsePhone(value: string, errors: ValidationError[]): string {
 }
 
 function parseMessage(value: string, errors: ValidationError[]): string {
-  const message = normalize(value, 800); // raw-cap well above the 700 limit
+  const message = normalize(value, 700);
 
   if (message.length < 20) {
     errors.push({ field: 'message', message: 'Message must be at least 20 characters' });
