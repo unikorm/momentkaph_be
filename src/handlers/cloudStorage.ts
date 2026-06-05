@@ -17,12 +17,12 @@ const VALID_GALLERY_TYPES = new Set([
 ]);
 
 export async function cloudStorageHandler(
-  _req: http.IncomingMessage,
   res: http.ServerResponse,
   galleryType: string,
   requestId: string
 ): Promise<void> {
   if (!VALID_GALLERY_TYPES.has(galleryType)) {
+    console.error(`[${requestId}] Invalid gallery type: ${galleryType}`);
     res.writeHead(404);
     res.end();
     return;
@@ -30,12 +30,13 @@ export async function cloudStorageHandler(
 
   const cdnUrl = process.env.CLOUD_STORAGE_CDN_URL!.replace(/\/$/, '');
   const keys = await listObjects(`${galleryType}/`);
-  const images = keys.filter(k => !k.endsWith('/'));
+  const images = keys.filter(k => !k.endsWith('/')); // filter out "folders"
 
   const results: GalleryImage[] = await Promise.all(
     images.map(async (key) => {
       const fullUrl = `${cdnUrl}/${key}`;
-      const mobileUrl = fullUrl;
+      const fileName = key.split('/').pop()!;
+      const mobileUrl = `${cdnUrl}/${galleryType}/mobile/${fileName}`;
       const image: GalleryImage = { fullUrl, mobileUrl };
 
       try {
@@ -48,9 +49,8 @@ export async function cloudStorageHandler(
           image.mobileHeight = Math.floor(size.height / 3);
         }
       } catch {
-        // dimension extraction is best-effort
+        console.error(`[${requestId}] Failed to get size for ${key}, skipping dimensions`);
       }
-
       return image;
     })
   );

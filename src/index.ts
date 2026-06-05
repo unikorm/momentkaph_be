@@ -44,7 +44,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const galleryMatch = pathname.match(/^\/cloud_storage\/([^/]+)$/);
     if (req.method === 'GET' && galleryMatch) {
-      await cloudStorageHandler(req, res, galleryMatch[1], requestId.toString());
+      await cloudStorageHandler(res, galleryMatch[1], requestId.toString());
       return;
     }
 
