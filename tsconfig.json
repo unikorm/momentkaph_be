@@ -1,16 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2023",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
-    "rootDir": ".",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "sourceMap": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "sourceMap": false,
     "types": ["node"]
   },
-  "include": ["index.ts", "src/**/*.ts"],
+  "include": ["./src/**/*.ts"],
   "exclude": ["dist", "node_modules"]
 }
