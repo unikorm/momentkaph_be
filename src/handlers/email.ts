@@ -8,7 +8,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
   let data: ContactRequest; // simple JSON <key:string, value:string> expected, but we validate it thoroughly in the next step
 
   try { // it is first line of defense against malicious payloads and malformed requests
-    data = await readBody(req); // here it must be JSON of ContactRequest type, otherwise we throw 404
+    data = await readBody(req);
   } catch (err) {
     console.error(`[${requestId}] Failed to read request body or parse JSON`, err instanceof Error ? err.message : err);
     res.writeHead(404);
@@ -19,7 +19,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
   const result = validateContactForm(data); // check buisness rules, security and honeypot before talking to resend API
   if (result.status === 'invalid') {
   console.error(`[${requestId}] Validation errors:`, result.errors);
-  res.writeHead(400);
+  res.writeHead(404);
   res.end();
   return;
 }
@@ -40,7 +40,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     res.end();
   } catch (err) {
     console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
-    res.writeHead(500);
+    res.writeHead(404);
     res.end();
   }
 }
