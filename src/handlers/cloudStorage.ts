@@ -1,6 +1,6 @@
 import type http from 'http';
 import { listObjects, getObjectRange } from '../lib/aws.js';
-import { getImageSize } from '../lib/imgSize.js';
+import { getAvifSize } from '../lib/imgSize.js';
 
 interface GalleryImage {
   fullUrl: string;
@@ -29,7 +29,7 @@ export async function cloudStorageHandler(
   }
 
   const cdnUrl = process.env.CLOUD_STORAGE_CDN_URL!.replace(/\/$/, '');
-  const keys = await listObjects(`${galleryType}/`);
+  const keys = await listObjects(galleryType);
   const images = keys.filter(k => !k.endsWith('/')); // filter out "folders"
 
   const results: GalleryImage[] = await Promise.all(
@@ -41,7 +41,7 @@ export async function cloudStorageHandler(
 
       try {
         const buf = await getObjectRange(key);
-        const size = getImageSize(buf);
+        const size = getAvifSize(buf);
         if (size) {
           image.width = size.width;
           image.height = size.height;

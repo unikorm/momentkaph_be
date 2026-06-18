@@ -8,7 +8,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
   let data: ContactRequest; // simple JSON <key:string, value:string> expected, but we validate it thoroughly in the next step
 
   try { // it is first line of defense against malicious payloads and malformed requests
-    data = await readBody(req);
+    data = await readBody(req); // here it must be JSON of ContactRequest type, otherwise we throw 404
   } catch (err) {
     console.error(`[${requestId}] Failed to read request body or parse JSON`, err instanceof Error ? err.message : err);
     res.writeHead(404);
