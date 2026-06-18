@@ -2,8 +2,8 @@ import crypto from 'crypto';
 import https from 'https';
 
 export async function listObjects(galleryType: string): Promise<string[]> {
-  const host = process.env.CLOUD_STORAGE_BUCKET_ENDPOINT!;
-  const query = `list-type=2&prefix=${encodeURIComponent(`${galleryType}/`)}`;
+  const host = process.env.CLOUD_STORAGE_BUCKET_HOST!;
+  const query = `list-type=2&prefix=${encodeURIComponent(`${galleryType}/full/`)}`;
   const bodyHash = sha256('');
 
   const headers = signHeaders('GET', host, '/', query, {}, bodyHash);
@@ -20,7 +20,7 @@ export async function listObjects(galleryType: string): Promise<string[]> {
 }
 
 export async function getObjectRange(key: string, bytes = 10239): Promise<Buffer> {
-  const host = process.env.CLOUD_STORAGE_BUCKET_ENDPOINT!;
+  const host = process.env.CLOUD_STORAGE_BUCKET_HOST!;
   const objPath = encodePath(key);
   const bodyHash = sha256('');
 

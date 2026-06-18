@@ -1,79 +1,16 @@
-name: Deploy
+name: Release & Deploy
 
-# Triggered manually from GitHub → Actions → Deploy → Run workflow
-# You pick the version string (e.g. 1.8.0); it becomes the git tag and release name.
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g. 1.8.0)'
-        required: true
-        type: string
+  
 
-# ── Server-side paths — adjust these to match your droplet ──────────────────
 env:
-  APP_DIR: /home/momentkaph/momentkaph_be   # where the repo is cloned on the droplet
-  PM2_APP_NAME: momentkaph-be               # name shown in `pm2 list`
+  APP_DIR: /home/momentkaph/momentkaph_be
+  PM2_APP_NAME: momentkaph-be
   NGINX_CONF_TARGET: /etc/nginx/nginx.conf
   NGINX_SITE_TARGET: /etc/nginx/sites-available/api.momentkaph.sk
-# ────────────────────────────────────────────────────────────────────────────
 
 jobs:
-  # ── 1. Typecheck & build (verify the code before touching the server) ──────
-  ci:
-    name: Typecheck & build
-    runs-on: ubuntu-latest
-    outputs:
-      nginx_hash: ${{ steps.nginx_hash.outputs.value }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Typecheck & build
-        run: npm run ci   # tsc --noEmit && tsc
-
-      - name: Hash nginx configs
-        id: nginx_hash
-        run: |
-          echo "value=$(cat nginx/nginx.conf.sh nginx/nestjs-api.sh | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-
-  # ── 2. GitHub release (nginx configs attached as assets) ──────────────────
-  release:
-    name: Create release
-    needs: ci
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
-          files: |
-            nginx/nginx.conf.sh
-            nginx/nestjs-api.sh
-          body: |
-            nginx config hash: `${{ needs.ci.outputs.nginx_hash }}`
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # ── 3. Deploy to DigitalOcean droplet via SSH ─────────────────────────────
-  # Required secrets (GitHub → repo → Settings → Secrets → Actions):
-  #   DO_HOST    — droplet IP or hostname
-  #   DO_USER    — SSH user (e.g. root or momentkaph)
-  #   DO_SSH_KEY — private key whose public half is in ~/.ssh/authorized_keys on the droplet
-  #
-  # The SSH user needs passwordless sudo for these commands only.
-  # Add to /etc/sudoers.d/momentkaph-deploy (visudo):
-  #   momentkaph ALL=(ALL) NOPASSWD: /bin/cp, /usr/sbin/nginx, /bin/systemctl reload nginx
   deploy:
     name: Deploy to droplet
     needs: [ci, release]
@@ -87,7 +24,6 @@ jobs:
           key: ${{ secrets.DO_SSH_KEY }}
           script: |
             set -e
-
             cd "${{ env.APP_DIR }}"
             git checkout main
             git pull origin main
@@ -98,7 +34,6 @@ jobs:
             pm2 restart ${{ env.PM2_APP_NAME }} \
               || pm2 start dist/index.js --name ${{ env.PM2_APP_NAME }}
 
-            # ── Nginx: redeploy only if config changed ──
             HASH_FILE=".nginx-deployed-hash"
             NEW_HASH="${{ needs.ci.outputs.nginx_hash }}"
             OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "none")

@@ -28,7 +28,7 @@ export async function cloudStorageHandler(
     return;
   }
 
-  const cdnUrl = process.env.CLOUD_STORAGE_CDN_URL!.replace(/\/$/, '');
+  const cdnUrl = process.env.CLOUD_STORAGE_BUCKET_PATH!.replace(/\/$/, '');
   const keys = await listObjects(galleryType);
   const images = keys.filter(k => !k.endsWith('/')); // filter out "folders"
 

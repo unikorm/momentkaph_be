@@ -20,13 +20,13 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const PORT = process.env.PORT || '3000';
+const PORT = process.env.PORT!;
 
 const mustBeHeaders: Record<string, string> = process.env.NODE_ENV !== 'production' ? {
-  'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || 'http://localhost:4200',
-  'Access-Control-Allow-Methods': process.env.CORS_METHODS || 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': process.env.CORS_HEADERS || 'Content-Type',
-  'Access-Control-Max-Age': process.env.CORS_MAX_AGE || '3600',
+  'Access-Control-Allow-Origin': process.env.CORS_ORIGIN!,
+  'Access-Control-Allow-Methods': process.env.CORS_METHODS!,
+  'Access-Control-Allow-Headers': process.env.CORS_HEADERS!,
+  'Access-Control-Max-Age': process.env.CORS_MAX_AGE!,
 } : {};
 
 const server = http.createServer(async (req, res) => {
