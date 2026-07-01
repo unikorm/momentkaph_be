@@ -7,7 +7,6 @@ jobs:
   # ── 1. Typecheck & build the exact commit that landed on main ──
   ci:
     name: Typecheck & build
-    if: github.event.pull_request.merged == true   # skip closed-but-not-merged PRs
     runs-on: ubuntu-latest
     outputs:
       nginx_hash: ${{ steps.nginx_hash.outputs.value }}
