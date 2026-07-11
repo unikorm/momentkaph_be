@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: echo "PR #${{ github.event.pull_request.number }} merged into main"
 
   build:
@@ -24,9 +24,9 @@ jobs:
       nginx_hash: ${{ steps.nginx_hash.outputs.value }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -51,9 +51,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: softprops/action-gh-release@v4
+      - uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: v${{ needs.build.outputs.version }}
