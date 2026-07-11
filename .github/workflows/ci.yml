@@ -61,7 +61,7 @@ jobs:
             echo ""
             echo "### App contents"
             echo '```'
-            tar -tzf BE.tar.gz | head -50
+            tar -tzf BE.tar.gz | head -100
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -77,7 +77,6 @@ jobs:
     name: create release
     needs: build
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     permissions:
       contents: write
     steps:
