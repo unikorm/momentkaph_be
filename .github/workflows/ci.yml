@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [closed]
     branches: [main]
@@ -47,7 +49,7 @@ jobs:
 
   release:
     name: create release
-    needs: on-merge build
+    needs: [on-merge, build]
     runs-on: ubuntu-latest
 
     steps:
