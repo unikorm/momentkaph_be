@@ -3,18 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
-    types: [closed]
-    branches: [main]
   workflow_dispatch:
 
 jobs:
-  on-merge:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v7
-      - run: echo "PR ${{ github.event.pull_request.number }} merged into main"
 
   build:
     name: build
@@ -28,9 +19,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: npm
 
-      - run: npm ci
       - run: npm run ci        # typecheck + build -> dist/
 
       - name: Read version
@@ -39,16 +28,15 @@ jobs:
 
       - name: Hash nginx configs
         id: nginx_hash
-        run: echo "value=$(cat nginx/nginx.conf.sh nginx/nestjs-api.sh | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+        run: echo "value=$(sha256sum nginx/*.conf | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Package app
         run: tar -czf BE.tar.gz -C dist .
 
       - name: Package nginx
         run: |
-          tar -czf nginx.tar.gz -C nginx nginx.conf.sh nestjs-api.sh
-          echo "${{ steps.nginx_hash.outputs.value }}" > nginx.hash
-
+          tar -czf nginx.tar.gz -C nginx .
+-
       - name: Summary
         run: |
           {
@@ -62,6 +50,11 @@ jobs:
             echo "### App contents"
             echo '```'
             tar -tzf BE.tar.gz | head -100
+            echo '```'
+            echo ""
+            echo "### nginx contents"
+            echo '```'
+            tar -tzf nginx.tar.gz | head -100
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -89,7 +82,6 @@ jobs:
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: v${{ needs.build.outputs.version }}
-          target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
           files: |
             BE.tar.gz
             nginx.tar.gz
