@@ -1,51 +1,21 @@
-name: Release & Deploy
-
-on:
-  workflow_dispatch:
-  
-
-env:
-  APP_DIR: /home/momentkaph/momentkaph_be
-  PM2_APP_NAME: momentkaph-be
-  NGINX_CONF_TARGET: /etc/nginx/nginx.conf
-  NGINX_SITE_TARGET: /etc/nginx/sites-available/api.momentkaph.sk
-
-jobs:
-  deploy:
-    name: Deploy to droplet
-    needs: [ci, release]
+deploy:
+    name: deploy
+    needs: build release
     runs-on: ubuntu-latest
     steps:
-      - name: SSH & deploy
-        uses: appleboy/ssh-action@v1
+      - uses: actions/download-artifact@v7
         with:
-          host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USER }}
-          key: ${{ secrets.DO_SSH_KEY }}
-          script: |
-            set -e
-            cd "${{ env.APP_DIR }}"
-            git checkout main
-            git pull origin main
+          name: release-assets
 
-            npm ci
-            npm run build
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-            pm2 restart ${{ env.PM2_APP_NAME }} \
-              || pm2 start dist/index.js --name ${{ env.PM2_APP_NAME }}
-
-            HASH_FILE=".nginx-deployed-hash"
-            NEW_HASH="${{ needs.ci.outputs.nginx_hash }}"
-            OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "none")
-
-            if [ "$NEW_HASH" != "$OLD_HASH" ]; then
-              echo "nginx config changed — deploying..."
-              sudo cp nginx/nginx.conf.sh "${{ env.NGINX_CONF_TARGET }}"
-              sudo cp nginx/nestjs-api.sh "${{ env.NGINX_SITE_TARGET }}"
-              sudo nginx -t
-              sudo systemctl reload nginx
-              echo "$NEW_HASH" > "$HASH_FILE"
-              echo "nginx reloaded"
-            else
-              echo "nginx config unchanged — skipping"
-            fi
+      - name: Ship artifacts
+        run: |
+          scp -i ~/.ssh/deploy_key \
+            BE.tar.gz nginx.tar.gz nginx.hash \
+            "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
