@@ -67,6 +67,7 @@ jobs:
             BE.tar.gz
             nginx.tar.gz
             nginx.hash
+            scripts/deploy.sh
 
   release:
     name: release
@@ -110,6 +111,6 @@ jobs:
       - name: Ship artifacts
         run: |
             scp -i ~/.ssh/deploy_key \
-              BE.tar.gz nginx.tar.gz nginx.hash deploy.sh \
+              BE.tar.gz nginx.tar.gz nginx.hash scripts/deploy.sh \
               "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
 
