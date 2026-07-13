@@ -34,9 +34,8 @@ jobs:
         run: tar -czf BE.tar.gz -C dist .
 
       - name: Package nginx
-        run: |
-          tar -czf nginx.tar.gz -C nginx .
--
+        run: tar -czf nginx.tar.gz -C nginx .
+
       - name: Summary
         run: |
           {
