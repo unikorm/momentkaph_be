@@ -29,13 +29,15 @@ jobs:
 
       - name: Hash nginx configs
         id: nginx_hash
-        run: echo "value=$(sha256sum nginx/*.conf | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+        run: echo "value=$(cat nginx/*.conf | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Package app
         run: tar -czf BE.tar.gz -C dist .
 
       - name: Package nginx
-        run: tar -czf nginx.tar.gz -C nginx .
+        run: |
+              tar -czf nginx.tar.gz -C nginx .
+              echo "${{ steps.nginx_hash.outputs.value }}" > nginx.hash
 
       - name: Summary
         run: |
