@@ -88,7 +88,7 @@ jobs:
             BE.tar.gz
             nginx.tar.gz
             nginx.hash
-            deploy.sh
+            scripts/deploy.sh
 
   deploy:
     name: deploy
