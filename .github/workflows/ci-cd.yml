@@ -69,7 +69,7 @@ jobs:
             nginx.hash
 
   release:
-    name: create release
+    name: release
     needs: build
     runs-on: ubuntu-latest
     permissions:
