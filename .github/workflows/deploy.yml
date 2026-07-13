@@ -1,7 +1,12 @@
-deploy:
+name: CD
+
+jobs:
+
+  deploy:
     name: deploy
     needs: build release
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/download-artifact@v7
         with:
@@ -9,13 +14,13 @@ deploy:
 
       - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+            mkdir -p ~/.ssh
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
       - name: Ship artifacts
         run: |
-          scp -i ~/.ssh/deploy_key \
-            BE.tar.gz nginx.tar.gz nginx.hash \
-            "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
+            scp -i ~/.ssh/deploy_key \
+              BE.tar.gz nginx.tar.gz nginx.hash \
+              "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
