@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP_DIR=/opt/momentkaph_be
 APP_NAME=BE
-NGINX_DEST=/opt/nginx/
+NGINX_DEST=/opt/momentkaph_be/nginx
 
 # ---- BE: swap dist, keep previous for rollback, atomic replace ----
 rm -rf "$APP_DIR/dist.prev"
