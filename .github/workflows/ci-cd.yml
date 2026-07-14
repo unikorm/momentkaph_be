@@ -118,5 +118,5 @@ jobs:
         run: |
             ssh -i ~/.ssh/deploy_key \
               "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}" \
-              'chmod +x /tmp/deploy.sh && ./tmp/deploy.sh'
+              'chmod +x /tmp/deploy.sh && bash /tmp/deploy.sh'
 
