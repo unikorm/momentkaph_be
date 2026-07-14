@@ -114,3 +114,9 @@ jobs:
               BE.tar.gz nginx.tar.gz nginx.hash scripts/deploy.sh \
               "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
 
+      - name: Deploy
+        run: |
+            ssh -i ~/.ssh/deploy_key \
+              "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}" \
+              'chmod +x /tmp/deploy.sh && ./tmp/deploy.sh'
+
