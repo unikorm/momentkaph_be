@@ -19,8 +19,8 @@ new_hash=$(cat /tmp/nginx.hash)
 cur_hash=$(cat "$APP_DIR/nginx.hash" 2>/dev/null || true)
 if [ "$new_hash" != "$cur_hash" ]; then
   tar -xzf /tmp/nginx.tar.gz -C "$NGINX_DEST"
-  echo "$new_hash" > "$APP_DIR/nginx.hash"
   nginx -t
+  echo "$new_hash" > "$APP_DIR/nginx.hash"
 else
   echo "nginx unchanged -> skipping reload"
 fi
