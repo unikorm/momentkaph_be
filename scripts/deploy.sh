@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
 
 APP_DIR=/opt/momentkaph_be
 APP_NAME=BE
@@ -24,3 +24,5 @@ if [ "$new_hash" != "$cur_hash" ]; then
 else
   echo "nginx unchanged -> skipping reload"
 fi
+
+rm -f /tmp/BE.tar.gz /tmp/nginx.tar.gz /tmp/nginx.hash /tmp/deploy.sh
