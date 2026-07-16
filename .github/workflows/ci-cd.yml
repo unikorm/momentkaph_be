@@ -107,6 +107,7 @@ jobs:
             echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
             chmod 600 ~/.ssh/deploy_key
             echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+            echo vi ~/.ssh/known_hosts
 
       - name: Ship artifacts
         run: |
