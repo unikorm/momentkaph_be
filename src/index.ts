@@ -7,16 +7,18 @@ import { emailHandler } from './handlers/email.js';
 
 // Load .env before anything else
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const envPath = path.join(__dirname, '.env');
-if (fs.existsSync(envPath)) {
-  for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const equals = trimmed.indexOf('=');
-    if (equals === -1) continue;
-    const key = trimmed.slice(0, equals).trim();
-    let val = trimmed.slice(equals + 1).trim();
-    if (key && !(key in process.env)) process.env[key] = val;
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const equals = trimmed.indexOf('=');
+      if (equals === -1) continue;
+      const key = trimmed.slice(0, equals).trim();
+      let val = trimmed.slice(equals + 1).trim();
+      if (key && !(key in process.env)) process.env[key] = val;
+    }
   }
 }
 
