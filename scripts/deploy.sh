@@ -14,7 +14,7 @@ rm -rf "$APP_DIR/dist.prev"
 [ -d "$APP_DIR/dist" ] && mv "$APP_DIR/dist" "$APP_DIR/dist.prev"
 mv "$staging" "$APP_DIR/dist"
 
-pm2 reload "$APP_NAME" --update-env 2>/dev/null \
+pm2 reload "$APP_NAME" 2>/dev/null \
   || pm2 start "$APP_DIR/ecosystem.config.cjs"
 pm2 save
 
