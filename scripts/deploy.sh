@@ -42,7 +42,7 @@ if [ "$new_hash" != "$cur_hash" ]; then
     rm -rf "$NGINX_DEST/conf.d" "$NGINX_DEST/nginx.conf"
     cp -a "$NGINX_PREV/nginx.conf" "$NGINX_DEST/nginx.conf"
     cp -a "$NGINX_PREV/conf.d"     "$NGINX_DEST/conf.d"
-    nginx -t || echo "WARNING: restored config also fails -t" >&2
+    nginx -t || echo "WARNING: restored config also fails, manual intervention needed" >&2
   }
   if ! nginx -t; then
     rollback
