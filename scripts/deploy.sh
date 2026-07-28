@@ -14,7 +14,17 @@ rm -rf "$APP_DIR/dist.prev"
 [ -d "$APP_DIR/dist" ] && mv "$APP_DIR/dist" "$APP_DIR/dist.prev"
 mv "$staging" "$APP_DIR/dist"
 
-pm2 reload "$APP_NAME" 2>/dev/null \
+#--- PM2: only swap config file if changed, restart pm2, update env ----
+new_hash=$(cat /tmp/pm2.hash)
+cur_hash=$(cat "$APP_DIR/pm2.hash" 2>/dev/null || true)
+if [ "$new_hash" != "$cur_hash" ]; then
+  # back up current
+  [ -f "$APP_DIR/ecosystem.config.cjs" ] && mv "$APP_DIR/ecosystem.config.cjs" "$APP_DIR/ecosystem.config.cjs.prev"
+  # install new
+  mv /tmp/ecosystem.config.cjs "$APP_DIR/ecosystem.config.cjs"
+  echo "$new_hash" > "$APP_DIR/pm2.hash"
+fi
+pm2 restart "$APP_DIR/ecosystem.config.cjs" --update-env 2>/dev/null \
   || pm2 start "$APP_DIR/ecosystem.config.cjs"
 pm2 save
 
@@ -59,4 +69,4 @@ else
   echo "nginx unchanged -> skipping reload"
 fi
 
-rm -f /tmp/BE.tar.gz /tmp/nginx.tar.gz /tmp/nginx.hash /tmp/deploy.sh
+rm -f /tmp/BE.tar.gz /tmp/nginx.tar.gz /tmp/nginx.hash /tmp/deploy.sh /tmp/ecosystem.config.cjs /tmp/pm2.hash

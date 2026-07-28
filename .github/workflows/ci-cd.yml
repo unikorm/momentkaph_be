@@ -31,6 +31,10 @@ jobs:
         id: nginx_hash
         run: echo "value=$(git rev-parse "HEAD:nginx")" >> "$GITHUB_OUTPUT"
 
+      - name: Hash PM2 config
+        id: pm2_hash
+        run: echo "value=$(git rev-parse "HEAD:ecosystem.config.cjs")" >> "$GITHUB_OUTPUT"
+
       - name: Package app
         run: tar -czf BE.tar.gz -C dist .
 
@@ -48,6 +52,7 @@ jobs:
             echo "- PR: #${{ github.event.pull_request.number }} — ${{ github.event.pull_request.title }}"
             echo "- App size: \`$(du -h BE.tar.gz | cut -f1)\`"
             echo "- nginx hash: \`${{ steps.nginx_hash.outputs.value }}\`"
+            echo "- PM2 config hash: \`${{ steps.pm2_hash.outputs.value }}\`"
             echo ""
             echo "### App contents"
             echo '```'
@@ -68,6 +73,7 @@ jobs:
             nginx.tar.gz
             nginx.hash
             scripts/deploy.sh
+            scripts/ecosystem.config.cjs
 
   release:
     name: release
@@ -90,6 +96,7 @@ jobs:
             nginx.tar.gz
             nginx.hash
             scripts/deploy.sh
+            scripts/ecosystem.config.cjs
 
   deploy:
     name: deploy
@@ -112,7 +119,7 @@ jobs:
       - name: Ship artifacts
         run: |
             scp -i ~/.ssh/deploy_key \
-              BE.tar.gz nginx.tar.gz nginx.hash scripts/deploy.sh \
+              BE.tar.gz nginx.tar.gz nginx.hash scripts/* \
               "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
 
       - name: Deploy
