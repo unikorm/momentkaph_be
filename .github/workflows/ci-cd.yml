@@ -123,7 +123,7 @@ jobs:
       - name: Ship artifacts
         run: |
             scp -i ~/.ssh/deploy_key \
-              BE.tar.gz nginx.tar.gz nginx.hash scripts/* \
+              BE.tar.gz nginx.tar.gz nginx.hash pm2.hash scripts/* \
               "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
 
       - name: Deploy
