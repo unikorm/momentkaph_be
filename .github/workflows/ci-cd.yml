@@ -33,7 +33,7 @@ jobs:
 
       - name: Hash PM2 config
         id: pm2_hash
-        run: echo "value=$(git rev-parse "HEAD:ecosystem.config.cjs")" >> "$GITHUB_OUTPUT"
+        run: echo "value=$(git rev-parse "HEAD:scripts/ecosystem.config.cjs")" >> "$GITHUB_OUTPUT"
 
       - name: Package app
         run: tar -czf BE.tar.gz -C dist .
@@ -72,8 +72,8 @@ jobs:
             BE.tar.gz
             nginx.tar.gz
             nginx.hash
-            scripts/deploy.sh
-            scripts/ecosystem.config.cjs
+            pm2.hash
+            scripts/*
 
   release:
     name: release
@@ -95,6 +95,7 @@ jobs:
             BE.tar.gz
             nginx.tar.gz
             nginx.hash
+            pm2.hash
             scripts/deploy.sh
             scripts/ecosystem.config.cjs
 
