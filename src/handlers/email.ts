@@ -1,7 +1,7 @@
 import type http from 'http';
 import { sendEmail } from '../lib/resend.js';
 import { validateContactForm, type ContactRequest } from '../lib/validate.js';
-import { emailFormTemplate } from '../templates/email.js';
+import { approvalEmailTemplate, emailFormTemplate } from '../templates/email.js';
 
 
 export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
@@ -36,13 +36,27 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
       subject: `New request from ${name} - momentkaph.sk`,
       html,
     });
-    res.writeHead(200);
-    res.end();
   } catch (err) {
     console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
     res.writeHead(404);
     res.end();
+    return;
   }
+
+  try {
+    const approvalHtml = approvalEmailTemplate({ name });
+    await sendEmail({ // send approval confirmation to the contact form submitter
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: email,
+      subject: 'Správa prijatá / Message received – momentkaph.sk',
+      html: approvalHtml,
+    });
+  } catch (err) {
+    console.error(`[${requestId}] Approval email send failed:`, err instanceof Error ? err.message : err);
+  }
+
+  res.writeHead(200);
+  res.end();
 }
 
 // helpers
