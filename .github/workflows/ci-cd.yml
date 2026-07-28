@@ -43,6 +43,10 @@ jobs:
               tar -czf nginx.tar.gz -C nginx .
               echo "${{ steps.nginx_hash.outputs.value }}" > nginx.hash
 
+      - name: Package PM2 config
+        run: |
+              echo "${{ steps.pm2_hash.outputs.value }}" > pm2.hash
+
       - name: Summary
         run: |
           {
@@ -96,8 +100,7 @@ jobs:
             nginx.tar.gz
             nginx.hash
             pm2.hash
-            scripts/deploy.sh
-            scripts/ecosystem.config.cjs
+            scripts/*
 
   deploy:
     name: deploy
