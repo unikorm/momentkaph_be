@@ -11,7 +11,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
 
   try {
     const ctHeader = req.headers['content-type'];
-    const ct = Array.isArray(ctHeader) ? ctHeader.join(',') : (ctHeader ?? '');
+    const ct = Array.isArray(ctHeader) ? (ctHeader[0] ?? '') : (ctHeader ?? '');
     if (!ct.includes('application/json')) {
       status = 400;
       return;
@@ -21,7 +21,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     try {
       body = await readBody(req);
     } catch (err) {
-      console.error(`[${requestId}] Failed to read request body:`, err instanceof Error ? err.message : err);
+      console.error('[%s] Failed to read request body:', requestId, err instanceof Error ? err.message : err);
       status = 400;
       return;
     }
@@ -34,7 +34,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     }
 
     if (result.status === 'invalid') {
-      console.error(`[${requestId}] Validation errors:`, result.errors);
+      console.error('[%s] Validation errors:', requestId, result.errors);
       status = 400;
       return;
     }
@@ -52,7 +52,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
         html,
       });
     } catch (err) {
-      console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
+      console.error('[%s] Email send failed:', requestId, err instanceof Error ? err.message : err);
       status = 502;
       return;
     }
@@ -65,14 +65,14 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
       subject: 'Správa prijatá / Message received – momentkaph.sk',
       html: approvalHtml,
     }).catch((err: unknown) => {
-      console.error(`[${requestId}] Approval email send failed:`, err instanceof Error ? err.message : err);
+      console.error('[%s] Approval email send failed:', requestId, err instanceof Error ? err.message : err);
     });
 
     status = 200;
   } finally {
     if (!res.headersSent) res.writeHead(status);
     if (!res.writableEnded) res.end();
-    console.log(`[${requestId}] responded ${status} in ${Date.now() - start}ms`);
+    console.log('[%s] responded %d in %dms', requestId, status, Date.now() - start);
   }
 }
 
@@ -98,6 +98,8 @@ function readBody(req: http.IncomingMessage): Promise<unknown> {
       try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
       catch { reject(new Error('Invalid JSON')); }
     });
-    req.on('error', reject);
+    req.on('error', (err) => {
+      if (!destroyed) reject(err); // absorb the error emitted by req.destroy()
+    });
   });
 }

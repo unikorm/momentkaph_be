@@ -76,11 +76,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    console.error(`[${requestId}] No handler for ${req.method} ${pathname}`);
+    console.error('[%s] No handler for %s %s', requestId, req.method, pathname);
     res.writeHead(404);
     res.end();
   } catch (err) {
-    console.error(`[${requestId}]`, err);
+    console.error('[%s]', requestId, err);
     if (!res.headersSent) res.writeHead(500);
     if (!res.writableEnded) res.end();
   }
