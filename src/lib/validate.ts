@@ -8,34 +8,36 @@ export interface ContactRequest {
   email: string;
   phone: string;
   message: string;
-  approval?: string; // hidden honeypot field — should always be empty
 }
 
 export type ParseResult =
   | { status: 'ok'; value: ContactRequest }
+  | { status: 'honeypot' }
   | { status: 'invalid'; errors: ValidationError[] }
 
-export function validateContactForm(data: ContactRequest): ParseResult {
+export function validateContactForm(data: unknown): ParseResult {
 
   // Guard against non-object bodies — curl -d "hello" style payloads.
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return { status: 'invalid', errors: [{ field: 'body', message: 'Request body must be a JSON object' }] };
   }
 
-  const raw = data as ContactRequest;
+  const raw = data as Record<string, unknown>;
 
-  if (typeof raw.approval === 'string' && raw.approval.trim().length > 0) {
-    return { status: 'invalid', errors: [{ field: 'approval', message: 'Honeypot field must be empty' }] };
+  // Honeypot gets its own outcome: returning 200 with no email sent means
+  // a bot that trips the field learns nothing and moves on.
+  if (typeof raw['approval'] === 'string' && raw['approval'].trim().length > 0) {
+    return { status: 'honeypot' };
   }
 
   // Each field gets its own small parser: it returns the CLEAN value and pushes
   // any problems into the shared list. Keeping each field's rules in one spot
   // is most of what makes this readable.
   const errors: ValidationError[] = [];
-  const name = parseName(raw.name, errors);
-  const email = parseEmail(raw.email, errors);
-  const phone = parsePhone(raw.phone, errors);
-  const message = parseMessage(raw.message, errors);
+  const name = parseName(raw['name'], errors);
+  const email = parseEmail(raw['email'], errors);
+  const phone = parsePhone(raw['phone'], errors);
+  const message = parseMessage(raw['message'], errors);
 
   if (errors.length > 0) return { status: 'invalid', errors };
 
@@ -45,7 +47,7 @@ export function validateContactForm(data: ContactRequest): ParseResult {
 }
 
 // helpers
-function parseName(value: string, errors: ValidationError[]): string {
+function parseName(value: unknown, errors: ValidationError[]): string {
   const name = normalize(value, 100);
   if (name.length < 3 || name.length > 100) {
     errors.push({ field: 'name', message: 'Name must be 3–100 characters' });
@@ -53,7 +55,7 @@ function parseName(value: string, errors: ValidationError[]): string {
   return name;
 }
 
-function parseEmail(value: string, errors: ValidationError[]): string {
+function parseEmail(value: unknown, errors: ValidationError[]): string {
   const email = normalize(value, 254).toLowerCase();
   if (!email) {
     errors.push({ field: 'email', message: 'Email is required' });
@@ -65,7 +67,7 @@ function parseEmail(value: string, errors: ValidationError[]): string {
   return email;
 }
 
-function parsePhone(value: string, errors: ValidationError[]): string {
+function parsePhone(value: unknown, errors: ValidationError[]): string {
   const phone = normalize(value, 20);
   if (!phone) {
     errors.push({ field: 'phone', message: 'Phone is required' });
@@ -77,7 +79,7 @@ function parsePhone(value: string, errors: ValidationError[]): string {
   return phone;
 }
 
-function parseMessage(value: string, errors: ValidationError[]): string {
+function parseMessage(value: unknown, errors: ValidationError[]): string {
   const message = normalize(value, 700);
 
   if (message.length < 20) {
@@ -120,7 +122,7 @@ function isRepetitive(s: string): boolean {
   return maxFreq / s.length > 0.6;
 }
 
-function normalize(value: string, maxRawLength: number): string {
+function normalize(value: unknown, maxRawLength: number): string {
   if (typeof value !== 'string') return '';
   const capped = value.length > maxRawLength ? value.slice(0, maxRawLength + 1) : value;
   return capped.trim().replace(/\s+/g, ' ');

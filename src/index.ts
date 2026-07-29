@@ -22,6 +22,22 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
+// Validate required env vars once at startup — a missing var surfaces here as a
+// loud crash rather than a confusing Resend 4xx on the first real submission.
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`Missing required environment variable: ${name}`);
+    process.exit(1);
+  }
+  return value;
+}
+
+requireEnv('PORT');
+requireEnv('RESEND_API_KEY');
+requireEnv('RESEND_FROM_EMAIL');
+requireEnv('RESEND_EMAIL_RECIPIENT');
+
 const PORT = process.env.PORT!;
 
 const mustBeHeaders: Record<string, string> = process.env.NODE_ENV !== 'production' ? {
@@ -40,7 +56,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const requestId = req.headers['x-request-id'] ?? 'no-request-id';
+  const requestId = (() => {
+    const raw = req.headers['x-request-id'];
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    return typeof value === 'string' ? value.replace(/[^\x20-\x7E]/g, '') : 'no-request-id';
+  })();
   const pathname = new URL(req.url ?? '/', `http://x`).pathname;
 
   try {
@@ -60,8 +80,8 @@ const server = http.createServer(async (req, res) => {
     res.end();
   } catch (err) {
     console.error(`[${requestId}]`, err);
-    res.writeHead(404);
-    res.end();
+    if (!res.headersSent) res.writeHead(500);
+    if (!res.writableEnded) res.end();
   }
 });
 
