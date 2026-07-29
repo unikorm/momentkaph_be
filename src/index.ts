@@ -59,7 +59,8 @@ const server = http.createServer(async (req, res) => {
   const requestId = (() => {
     const raw = req.headers['x-request-id'];
     const value = Array.isArray(raw) ? raw[0] : raw;
-    return typeof value === 'string' ? value.replace(/[^\x20-\x7E]/g, '') : 'no-request-id';
+    // strip control chars and `%` so requestId is safe to embed in console format strings
+    return typeof value === 'string' ? value.replace(/[^\x20-\x7E]/g, '').replace(/%/g, '') : 'no-request-id';
   })();
   const pathname = new URL(req.url ?? '/', `http://x`).pathname;
 

@@ -10,7 +10,8 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
   const start = Date.now();
 
   try {
-    const ct = req.headers['content-type'] ?? '';
+    const ctHeader = req.headers['content-type'];
+    const ct = Array.isArray(ctHeader) ? ctHeader.join(',') : (ctHeader ?? '');
     if (!ct.includes('application/json')) {
       status = 400;
       return;
