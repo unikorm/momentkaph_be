@@ -33,12 +33,10 @@ function requireEnv(name: string): string {
   return value;
 }
 
-requireEnv('PORT');
+const PORT = requireEnv('PORT');
 requireEnv('RESEND_API_KEY');
 requireEnv('RESEND_FROM_EMAIL');
 requireEnv('RESEND_EMAIL_RECIPIENT');
-
-const PORT = process.env.PORT!;
 
 const mustBeHeaders: Record<string, string> = process.env.NODE_ENV !== 'production' ? {
   'Access-Control-Allow-Origin': process.env.CORS_ORIGIN!,
