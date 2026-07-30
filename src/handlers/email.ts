@@ -1,7 +1,9 @@
 import type http from 'http';
 import { sendEmail } from '../lib/resend.js';
 import { validateContactForm, type ContactRequest } from '../lib/validate.js';
-import { emailFormTemplate } from '../templates/email.js';
+import { approvalTemplate, emailFormTemplate } from '../templates/email.js';
+
+const MAX_BODY_BYTES = 16 * 1024; // 16 KB — nginx caps this too, this is the in-app second line of defense
 
 
 export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
@@ -38,6 +40,10 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     });
     res.writeHead(200);
     res.end();
+
+    // Fire-and-forget: the submitter already has their 200, so the confirmation
+    // mail must not hold the request open. Failures are logged, never surfaced.
+    void sendApprovalEmail(email, name, requestId);
   } catch (err) {
     console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
     res.writeHead(404);
@@ -46,14 +52,62 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
 }
 
 // helpers
+async function sendApprovalEmail(to: string, name: string, requestId: string): Promise<void> {
+  let html = '';
+  try {
+    html = approvalTemplate({ name });
+    await sendEmail({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to,
+      subject: 'Ďakujem za správu - momentkaph.sk',
+      html,
+    });
+  } catch (err) { // best effort only — the contact form itself already succeeded
+    console.error(`[${requestId}] Approval email send failed:`, err instanceof Error ? err.message : err);
+  } finally {
+    html = ''; // drop the rendered template so it is not held alive by this closure
+  }
+}
+
 function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
   return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (c: Buffer) => chunks.push(c));
+    const contentType = (req.headers['content-type'] ?? '').trim();
+    if (!/^application\/json\s*(?:;|$)/i.test(contentType)) { // only JSON bodies, charset parameter allowed
+      req.pause(); // stop pulling the body in, the handler answers 404 and node closes the socket
+      reject(new Error(`Unsupported Content-Type: ${contentType || 'missing'}`));
+      return;
+    }
+
+    const declaredLength = Number(req.headers['content-length']);
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) { // cheap reject before reading a single byte
+      req.pause();
+      reject(new Error(`Payload too large: ${declaredLength} bytes declared`));
+      return;
+    }
+
+    let chunks: Buffer[] = [];
+    let received = 0;
+
+    req.on('data', (c: Buffer) => {
+      received += c.length;
+      if (received > MAX_BODY_BYTES) { // chunked/lying senders get caught here
+        chunks = [];
+        req.pause();
+        reject(new Error(`Payload too large: over ${MAX_BODY_BYTES} bytes`));
+        return;
+      }
+      chunks.push(c);
+    });
+
     req.on('end', () => {
       try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
       catch { reject(new Error('Invalid JSON')); }
+      finally { chunks = []; } // release the buffered body either way
     });
-    req.on('error', reject);
+
+    req.on('error', (err) => {
+      chunks = [];
+      reject(err);
+    });
   });
 }

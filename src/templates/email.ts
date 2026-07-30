@@ -35,6 +35,35 @@ export function emailFormTemplate({ name, email, phone, message, timestamp }: Em
 }
 
 
+interface ApprovalTemplateData {
+  name: string;
+}
+
+// Confirmation sent back to the person who filled the contact form — placeholder wording for now.
+export function approvalTemplate({ name }: ApprovalTemplateData): string {
+  return `<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<style>
+  body{font-family:Arial,sans-serif;background:#f5f5f5;padding:24px;margin:0}
+  .card{background:#fff;border-radius:8px;padding:28px;max-width:560px;margin:auto;border:1px solid #e0e0e0}
+  h2{margin:0 0 20px;color:#1a1a1a;font-size:18px}
+  .value{font-size:15px;color:#222;line-height:1.5}
+  .footer{margin-top:24px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Ďakujem za správu, ${esc(name)}!</h2>
+  <div class="value">Vašu správu som dostal a čoskoro sa Vám ozvem.</div>
+  <div class="footer">momentkaph.sk</div>
+</div>
+</body>
+</html>`;
+}
+
+
 // helpers
 function esc(str: string): string {
   return str
