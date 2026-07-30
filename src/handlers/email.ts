@@ -1,10 +1,28 @@
 import type http from 'http';
 import { sendEmail } from '../lib/resend.js';
 import { validateContactForm, type ContactRequest } from '../lib/validate.js';
-import { emailFormTemplate } from '../templates/email.js';
+import { emailFormTemplate, approvalEmailTemplate } from '../templates/email.js';
 
+const MAX_BODY_BYTES = 16 * 1024; // 16 KB
 
 export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
+
+  // Defense check: Content-Type must be application/json and payload must not exceed 16 KB
+  const contentType = req.headers['content-type'] ?? '';
+  if (!contentType.includes('application/json')) {
+    console.error(`[${requestId}] Rejected: unexpected Content-Type "${contentType}"`);
+    res.writeHead(404);
+    res.end();
+    return;
+  }
+  const contentLength = parseInt(req.headers['content-length'] ?? '0', 10);
+  if (contentLength > MAX_BODY_BYTES) {
+    console.error(`[${requestId}] Rejected: Content-Length ${contentLength} exceeds 16 KB`);
+    res.writeHead(404);
+    res.end();
+    return;
+  }
+
   let data: ContactRequest; // simple JSON <key:string, value:string> expected, but we validate it thoroughly in the next step
 
   try { // it is first line of defense against malicious payloads and malformed requests
@@ -38,6 +56,16 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     });
     res.writeHead(200);
     res.end();
+    // Fire-and-forget: send approval email to the submitter independently — if it fails, just log it
+    sendEmail({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: email,
+      subject: 'I got your message – momentkaph.sk',
+      html: approvalEmailTemplate({ name }),
+    }).catch(approvalErr => {
+      const errMsg = approvalErr instanceof Error ? approvalErr.message : String(approvalErr);
+      console.error(`[${requestId}] Approval email failed: ${errMsg}`);
+    });
   } catch (err) {
     console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
     res.writeHead(404);
@@ -49,10 +77,20 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
 function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on('data', (c: Buffer) => chunks.push(c));
+    let totalBytes = 0;
+    req.on('data', (c: Buffer) => {
+      totalBytes += c.length;
+      if (totalBytes > MAX_BODY_BYTES) {
+        reject(new Error('Payload too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
     req.on('end', () => {
       try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
       catch { reject(new Error('Invalid JSON')); }
+      finally { chunks.length = 0; } // free buffer memory
     });
     req.on('error', reject);
   });
