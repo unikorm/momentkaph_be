@@ -20,11 +20,11 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
 
   const result = validateContactForm(data); // check buisness rules, security and honeypot before talking to resend API
   if (result.status === 'invalid') {
-  console.error(`[${requestId}] Validation errors:`, result.errors);
-  res.writeHead(404);
-  res.end();
-  return;
-}
+    console.error(`[${requestId}] Validation errors:`, result.errors);
+    res.writeHead(404);
+    res.end();
+    return;
+  }
 
   const { name, email, phone, message } = result.value;
 
@@ -48,9 +48,6 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
     res.writeHead(404);
     res.end();
-  } finally {
-    // free up the occupied memory
-    data = { name: '', email: '', phone: '', message: '' };
   }
 }
 
@@ -67,8 +64,6 @@ async function sendApprovalEmail(to: string, name: string, requestId: string): P
     });
   } catch (err) { // best effort only — the contact form itself already succeeded
     console.error(`[${requestId}] Approval email send failed:`, err instanceof Error ? err.message : err);
-  } finally {
-    html = ''; // drop the rendered template so it is not held alive by this closure
   }
 }
 
@@ -77,6 +72,7 @@ function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
     const contentType = (req.headers['content-type'] ?? '').trim();
     if (!/^application\/json\s*(?:;|$)/i.test(contentType)) { // only JSON bodies, charset parameter allowed
       req.pause(); // stop pulling the body in, the handler answers 404 and node closes the socket
+      req.removeAllListeners();
       reject(new Error(`Unsupported Content-Type: ${contentType || 'missing'}`));
       return;
     }
@@ -84,6 +80,7 @@ function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
     const declaredLength = Number(req.headers['content-length']);
     if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) { // cheap reject before reading a single byte
       req.pause();
+      req.removeAllListeners();
       reject(new Error(`Payload too large: ${declaredLength} bytes declared`));
       return;
     }
@@ -96,6 +93,7 @@ function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
       if (received > MAX_BODY_BYTES) { // chunked/lying senders get caught here
         chunks = [];
         req.pause();
+        req.removeAllListeners();
         reject(new Error(`Payload too large: over ${MAX_BODY_BYTES} bytes`));
         return;
       }
