@@ -3,7 +3,7 @@ import { sendEmail } from '../lib/resend.js';
 import { validateContactForm, type ContactRequest } from '../lib/validate.js';
 import { approvalTemplate, emailFormTemplate } from '../templates/email.js';
 
-const MAX_BODY_BYTES = 16 * 1024; // 16 KB — nginx caps this too, this is the in-app second line of defense
+const MAX_BODY_BYTES = 8 * 1024; // 8 KB — nginx caps this too, this is the in-app second line of defense
 
 
 export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
@@ -48,6 +48,9 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
     res.writeHead(404);
     res.end();
+  } finally {
+    // free up the occupied memory
+    data = { name: '', email: '', phone: '', message: '' };
   }
 }
 

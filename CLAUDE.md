@@ -14,11 +14,11 @@ npm run fire-up     # ci → start
 
 There is no test framework, linter, or formatter in this repo. `npm run ci` is the only gate — CI fails on type errors and nothing else.
 
-Local run gotcha: in non-production, [src/index.ts](src/index.ts#L9-L23) loads `.env` from `path.join(__dirname, '.env')`, which resolves to `dist/.env` after compilation — not the repo-root `.env`. Copy or symlink the root `.env` into `dist/` before `npm start`, or pass `node --env-file=.env dist/index.js`. In production PM2 supplies the env file (`--env-file=/opt/momentkaph_be/.env`) and the in-app loader is skipped entirely.
+Local run gotcha: in non-production, [src/index.ts](src/index.ts#L9-L23) loads `.env` from `path.join(__dirname, '.env')`, which resolves to `dist/.env` after compilation — not the repo-root `.env`. Copy or symlink the root `.env` into `dist/` before `npm start`, or pass `node --env-file=.env dist/index.js`. In production systemd service supplies the env file (`--env-file=/opt/momentkaph_be/.env`) and the in-app loader is skipped entirely.
 
 ## Architecture
 
-A single Node HTTP server on `127.0.0.1:$PORT` (4869), fronted by nginx which terminates TLS at `api.momentkaph.sk`. Two endpoints, both hand-routed by regex in [src/index.ts](src/index.ts#L47-L56):
+A single Node HTTP server on `127.0.0.1:$PORT`, fronted by nginx which terminates TLS at `api.momentkaph.sk`. Two endpoints, both hand-routed by regex in [src/index.ts](src/index.ts#L47-L56):
 
 - `GET /cloud_storage/:galleryType` → [src/handlers/cloudStorage.ts](src/handlers/cloudStorage.ts)
 - `POST /email_sending` → [src/handlers/email.ts](src/handlers/email.ts)
@@ -42,7 +42,7 @@ The deploy pipeline ships **only the contents of `dist/`** to the server (`tar -
 [nginx/](nginx/) is versioned here and deployed alongside the app. Several limits are deliberately enforced in both places, and the two must be kept in sync:
 
 - **Gallery type allowlist** — `VALID_GALLERY_TYPES` in [src/handlers/cloudStorage.ts](src/handlers/cloudStorage.ts#L14-L17) must match the `location ~ ^/cloud_storage/(...)$` regex in [nginx/conf.d/apis.conf](nginx/conf.d/apis.conf). Adding a gallery means editing both.
-- **Body size** — nginx `client_max_body_size 4k`; app caps at `MAX_BODY_BYTES = 16 * 1024` as a second line of defense.
+- **Body size** — nginx `client_max_body_size 4k`; app caps at `MAX_BODY_BYTES = 8 * 1024` as a second line of defense.
 - **CORS** — nginx adds the headers and answers `OPTIONS` in production. The app only sets CORS headers and handles `OPTIONS` when `NODE_ENV !== 'production'` ([src/index.ts](src/index.ts#L27-L41)), so local dev works without nginx. Don't add CORS handling that runs in production.
 - **Method restriction, rate limiting, bad-bot blocking, response caching** (60d on gallery responses) all live in nginx only.
 
