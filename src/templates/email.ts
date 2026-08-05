@@ -125,7 +125,7 @@ export function approvalTemplate({ name }: ApprovalTemplateData): string {
 
     <tr><td style="padding:38px 32px 0;">
       <h1 style="margin:0;font-family:${HEAD};font-weight:normal;font-size:29px;line-height:37px;mso-line-height-rule:exactly;color:#201e1d;">Ďakujem za správu, ${n}!</h1>
-      <p style="margin:14px 0 0;font-family:${BODY};font-size:16px;line-height:26px;mso-line-height-rule:exactly;color:#463f38;">Vašu správu som dostal a čoskoro sa Vám ozvem — zvyčajne do 24 hodín. Ak je to súrne, pokojne mi zavolajte.</p>
+      <p style="margin:14px 0 0;font-family:${BODY};font-size:16px;line-height:26px;mso-line-height-rule:exactly;color:#463f38;">Vašu správu som dostala a čoskoro sa Vám ozvem — zvyčajne do 24 hodín. Ak je to súrne, pokojne mi zavolajte.</p>
     </td></tr>
 
     <tr><td style="padding:26px 32px 0;">

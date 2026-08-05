@@ -96,7 +96,7 @@ function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
         chunks = [];
         req.pause();
         req.removeAllListeners();
-        reject(new Error(`Payload too large: over ${MAX_BODY_BYTES} bytes`));
+        reject(new Error(`Payload too large, content-length lying: over ${MAX_BODY_BYTES} bytes`));
         return;
       }
       chunks.push(c);
