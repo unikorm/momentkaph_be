@@ -9,8 +9,8 @@ const MAX_BODY_BYTES = 8 * 1024; // 8 KB — nginx caps this too, this is the in
 export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
   let data: ContactRequest; // simple JSON <key:string, value:string> expected, but we validate it thoroughly in the next step
 
-  try { // it is first line of defense against malicious payloads and malformed requests
-    data = await readBody(req);
+  try {
+    data = await readBody(req); // it is first line of defense against malicious payloads and malformed requests
   } catch (err) {
     console.error(`[${requestId}] Failed to read request body or parse JSON`, err instanceof Error ? err.message : err);
     res.writeHead(404);
@@ -69,10 +69,12 @@ async function sendApprovalEmail(to: string, name: string, requestId: string): P
 
 function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
   return new Promise((resolve, reject) => {
+    console.log(req.headers);
     const contentType = (req.headers['content-type'] ?? '').trim();
     if (!/^application\/json\s*(?:;|$)/i.test(contentType)) { // only JSON bodies, charset parameter allowed
       req.pause(); // stop pulling the body in, the handler answers 404 and node closes the socket
       req.removeAllListeners();
+      req.resume(); // resume the stream so that node can close the socket gracefully, otherwise it hangs for a while before closing
       reject(new Error(`Unsupported Content-Type: ${contentType || 'missing'}`));
       return;
     }
