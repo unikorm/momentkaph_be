@@ -110,13 +110,12 @@ export function approvalTemplate({ name }: ApprovalTemplateData): string {
 <title>Správa prijatá – momentkaph.sk</title>
 </head>
 <body style="margin:0;padding:0;background:#f2ece2;">
-<span style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f2ece2;font-size:1px;line-height:1px;">Vašu správu som dostal a čoskoro sa Vám ozvem. — momentkaph.sk</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2ece2;">
 <tr><td align="center" style="padding:32px 12px;">
 
-  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#fffdf9;border:1px solid #e6ddcd;border-radius:20px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#fffdf9;border:1px solid #e6ddcd;border-radius:20px;">
 
-    <tr><td style="padding:20px 32px;background:#b4744e;border-radius:20px 20px 0 0;">
+    <tr><td style="padding:20px 32px;background:#b4744e;border-radius:20px 20px 0 0;"display:flex;justify-content:space-between;align-items:center;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td align="left" style="font-family:${HEAD};font-size:17px;letter-spacing:0.4px;color:#fffaf4;">momentka<span style="color:#eccfb6;">ph</span></td>
         <td align="right" style="font-family:${BODY};font-size:11px;font-weight:bold;letter-spacing:1.4px;text-transform:uppercase;color:#f0dcc6;">Správa prijatá</td>

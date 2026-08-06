@@ -72,17 +72,12 @@ function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
     console.log(req.headers);
     const contentType = (req.headers['content-type'] ?? '').trim();
     if (!/^application\/json\s*(?:;|$)/i.test(contentType)) { // only JSON bodies, charset parameter allowed
-      req.pause(); // stop pulling the body in, the handler answers 404 and node closes the socket
-      req.removeAllListeners();
-      req.resume(); // resume the stream so that node can close the socket gracefully, otherwise it hangs for a while before closing
       reject(new Error(`Unsupported Content-Type: ${contentType || 'missing'}`));
       return;
     }
 
     const declaredLength = Number(req.headers['content-length']);
     if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) { // cheap reject before reading a single byte
-      req.pause();
-      req.removeAllListeners();
       reject(new Error(`Payload too large: ${declaredLength} bytes declared`));
       return;
     }
@@ -96,6 +91,7 @@ function readBody(req: http.IncomingMessage): Promise<ContactRequest> {
         chunks = [];
         req.pause();
         req.removeAllListeners();
+        req.destroy();
         reject(new Error(`Payload too large, content-length lying: over ${MAX_BODY_BYTES} bytes`));
         return;
       }
