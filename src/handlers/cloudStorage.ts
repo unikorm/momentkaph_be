@@ -1,6 +1,12 @@
 import type http from 'http';
-import { listObjects, getObjectRange } from '../lib/aws.js';
+import { listObjects, getObjectRange, presignUrl, encodePath } from '../lib/aws.js';
 import { getAvifSize } from '../lib/imgSize.js';
+
+// Bucket is private, so gallery images are served as SigV4 presigned URLs against
+// CLOUD_STORAGE_BUCKET_HOST (the origin Spaces endpoint) rather than through the
+// CDN alias — the presign signature must match the Host it's served from, and query
+// string passthrough on the CDN edge isn't guaranteed.
+const PRESIGN_EXPIRY_SECONDS = 30 * 60;
 
 interface GalleryImage {
   fullUrl: string;
@@ -28,15 +34,18 @@ export async function cloudStorageHandler(
     return;
   }
 
-  const cdnUrl = process.env.CLOUD_STORAGE_BUCKET_PATH!.replace(/\/$/, '');
+  const host = process.env.CLOUD_STORAGE_BUCKET_HOST!;
   const keys = await listObjects(galleryType);
   const images = keys.filter(k => !k.endsWith('/')); // filter out "folders"
 
   const results: GalleryImage[] = await Promise.all(
     images.map(async (key) => {
-      const fullUrl = `${cdnUrl}/${key}`;
       const fileName = key.split('/').pop()!;
-      const mobileUrl = `${cdnUrl}/${galleryType}/mobile/${fileName}`;
+      const mobileKey = `${galleryType}/mobile/${fileName}`;
+      // fullUrl and mobileUrl are different objects (not size variants of the same
+      // key), so each needs its own independent signature.
+      const fullUrl = presignUrl(host, encodePath(key), PRESIGN_EXPIRY_SECONDS);
+      const mobileUrl = presignUrl(host, encodePath(mobileKey), PRESIGN_EXPIRY_SECONDS);
       const image: GalleryImage = { fullUrl, mobileUrl };
 
       try {
