@@ -26,8 +26,18 @@ export function sendEmail(payload: EmailPayload): Promise<SendEmailResponse> {
         },
       },
       (res) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
+        let chunks: Buffer[] = [];
+        let received = 0;
+        res.on('data', (c: Buffer) => {
+          received += c.length;
+          if (received > 512) {
+            chunks = [];
+            res.destroy();
+            reject(new Error(`Response too large: over 512 bytes`));
+            return;
+          }
+          chunks.push(c)
+        });
         res.on('end', () => {
           const data = JSON.parse(Buffer.concat(chunks).toString()) as SendEmailResponse;
           if (res.statusCode === 200) {
@@ -35,6 +45,7 @@ export function sendEmail(payload: EmailPayload): Promise<SendEmailResponse> {
           } else {
             reject(new Error(`Resend ${res.statusCode}: ${JSON.stringify(data)}`));
           }
+          chunks = [];
         });
       }
     );

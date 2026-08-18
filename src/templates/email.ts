@@ -77,7 +77,7 @@ export function emailFormTemplate({ name, email, phone, message, timestamp }: Em
     <tr><td style="padding:26px 32px 0;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
         <td align="center" bgcolor="#b4744e" style="border-radius:999px;">
-          <a href="mailto:${e}?subject=Re:%20Va%C5%A1a%20spr%C3%A1va%20%E2%80%93%20momentkaph.sk" style="display:block;padding:14px 30px;font-family:${BODY};font-size:15px;font-weight:bold;color:#fffaf4;text-decoration:none;border-radius:999px;">Odpovedať</a>
+          <a href="mailto:${e}?subject=Odpove%C4%8F%20na%20Va%C5%A1u%20spr%C3%A1vu%20z%20webu%20momentkaph.sk" style="display:block;padding:14px 30px;font-family:${BODY};font-size:15px;font-weight:bold;color:#fffaf4;text-decoration:none;border-radius:999px;">Odpovedať</a>
         </td>
       </tr></table>
     </td></tr>
@@ -115,7 +115,7 @@ export function approvalTemplate({ name }: ApprovalTemplateData): string {
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#fffdf9;border:1px solid #e6ddcd;border-radius:20px;">
 
-    <tr><td style="padding:20px 32px;background:#b4744e;border-radius:20px 20px 0 0;"display:flex;justify-content:space-between;align-items:center;">
+    <tr><td style="padding:20px 32px;background:#b4744e;border-radius:20px 20px 0 0;display:flex;justify-content:space-between;align-items:center;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td align="left" style="font-family:${HEAD};font-size:17px;letter-spacing:0.4px;color:#fffaf4;">momentka<span style="color:#eccfb6;">ph</span></td>
         <td align="right" style="font-family:${BODY};font-size:11px;font-weight:bold;letter-spacing:1.4px;text-transform:uppercase;color:#f0dcc6;">Správa prijatá</td>
@@ -125,6 +125,7 @@ export function approvalTemplate({ name }: ApprovalTemplateData): string {
     <tr><td style="padding:38px 32px 0;">
       <h1 style="margin:0;font-family:${HEAD};font-weight:normal;font-size:29px;line-height:37px;mso-line-height-rule:exactly;color:#201e1d;">Ďakujem za správu, ${n}!</h1>
       <p style="margin:14px 0 0;font-family:${BODY};font-size:16px;line-height:26px;mso-line-height-rule:exactly;color:#463f38;">Vašu správu som dostala a čoskoro sa Vám ozvem — zvyčajne do 24 hodín. Ak je to súrne, pokojne mi zavolajte.</p>
+      <p style="margin:16px 0 0;font-family:${BODY};font-size:15px;line-height:24px;mso-line-height-rule:exactly;color:#8a7d6d;">Na túto správu, prosím, neodpovedajte — ide o automatické potvrdenie a odpovede na túto adresu nečítam. Ozvem sa Vám z mojej e-mailovej adresy.</p>
     </td></tr>
 
     <tr><td style="padding:26px 32px 0;">
@@ -137,7 +138,7 @@ export function approvalTemplate({ name }: ApprovalTemplateData): string {
 
     <tr><td style="padding:30px 32px 30px;">
       <div style="border-top:1px solid #eae3d6;padding-top:14px;font-family:${BODY};font-size:12px;line-height:19px;color:#9b8f80;">
-        Táto správa je automatické potvrdenie — nemusíte na ňu odpovedať.<br>
+        Automaticky generované potvrdenie — na túto správu neodpovedajte.<br>
         <a href="https://momentkaph.sk" style="color:#9b8f80;text-decoration:underline;">momentkaph.sk</a>
       </div>
     </td></tr>
