@@ -1,11 +1,14 @@
 import https from 'https';
-import type { SendEmailResponse } from '../handlers/email.js';
 
 interface EmailPayload {
   from: string;
   to: string;
   subject: string;
   html: string;
+}
+
+export interface SendEmailResponse {
+  id: string;
 }
 
 export function sendEmail(payload: EmailPayload): Promise<SendEmailResponse> {

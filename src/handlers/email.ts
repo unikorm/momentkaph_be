@@ -5,10 +5,6 @@ import { approvalTemplate, emailFormTemplate } from '../templates/email.js';
 
 const MAX_BODY_BYTES = 8 * 1024; // 8 KB — nginx caps this too, this is the in-app second line of defense
 
-export interface SendEmailResponse {
-  id: string;
-}
-
 export async function emailHandler(req: http.IncomingMessage, res: http.ServerResponse, requestId: string): Promise<void> {
   let data: ContactRequest; // simple JSON <key:string, value:string> expected, but we validate it thoroughly in the next step
 
