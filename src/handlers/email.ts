@@ -16,14 +16,16 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     data = await readBody(req); // it is first line of defense against malicious payloads and malformed requests
   } catch (err) {
     console.error(`[${requestId}] Failed to read request body or parse JSON -> `, err instanceof Error ? err.message : err);
-    res.destroy();
+    res.writeHead(404);
+    res.end();
     return;
   }
 
   const result = validateContactForm(data); // check buisness rules, security and honeypot before talking to resend API
   if (result.status === 'invalid') {
     console.error(`[${requestId}] Validation errors:`, result.errors);
-    res.destroy();
+    res.writeHead(404);
+    res.end();
     return;
   }
 
@@ -33,7 +35,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
   const html = emailFormTemplate({ name, email, phone, message, timestamp }); // create HTML content using the template
 
   try {
-    const idOfSendedEmail = await sendEmail({ // send the email via Resend API
+    const sentEmailResponse = await sendEmail({ // send the email via Resend API
       from: process.env.RESEND_FROM_EMAIL!,
       to: process.env.RESEND_EMAIL_RECIPIENT!,
       subject: `momentkaph.sk - new request from ${name}`,
@@ -45,7 +47,7 @@ export async function emailHandler(req: http.IncomingMessage, res: http.ServerRe
     // Fire-and-forget: the submitter already has their 200, so the confirmation
     // mail must not hold the request open. Failures are logged, never surfaced.
     void sendApprovalEmail(email, name, requestId);
-    console.log(`[${requestId}] Email sent successfully, Resend ID: ${idOfSendedEmail.id}`);
+    console.log(`[${requestId}] Email sent successfully, Resend ID: ${sentEmailResponse.id}`);
   } catch (err) {
     console.error(`[${requestId}] Email send failed:`, err instanceof Error ? err.message : err);
     res.writeHead(404);

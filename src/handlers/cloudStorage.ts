@@ -23,7 +23,8 @@ export async function cloudStorageHandler(
 ): Promise<void> {
   if (!VALID_GALLERY_TYPES.has(galleryType)) {
     console.error(`[${requestId}] Invalid gallery type: ${galleryType}`);
-    res.destroy();
+    res.writeHead(404);
+    res.end();
     return;
   }
 

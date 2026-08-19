@@ -30,7 +30,7 @@ export function sendEmail(payload: EmailPayload): Promise<SendEmailResponse> {
           if (received > 1024) { // Resend API responses are tiny, so this is a cheap sanity check
             chunks = [];
             res.destroy();
-            reject(new Error(`Response from Resend API too large: over 512 bytes`));
+            reject(new Error(`Response from Resend API too large: over 1024 bytes`));
             return;
           }
           chunks.push(c)
@@ -41,7 +41,7 @@ export function sendEmail(payload: EmailPayload): Promise<SendEmailResponse> {
             if (res.statusCode === 200) {
               resolve(data);
             } else {
-              reject(new Error(`Resend return ${res.statusCode} and payload: ${JSON.stringify(data)}`));
+              reject(new Error(`Resend returned ${res.statusCode} and payload: ${JSON.stringify(data)}`));
             }
           } catch (err) {
             reject(new Error(`Failed to parse response from Resend API: ${err instanceof Error ? err.message : String(err)}`));
