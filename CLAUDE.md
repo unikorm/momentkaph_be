@@ -56,7 +56,7 @@ Malformed JSON, wrong `Content-Type`, oversized payload, validation failure, hon
 
 On success the handler sends the notification mail to the site owner, responds `200`, then fires the submitter confirmation as **fire-and-forget** (`void sendApprovalEmail(...)`) so a slow Resend call can't hold the request open. Confirmation failures are logged only, never surfaced.
 
-All template interpolation goes through `esc()` in [src/templates/email.ts](src/templates/email.ts#L68-L75) — HTML is assembled by string concatenation, so any new interpolated value must be escaped.
+All template interpolation goes through `esc()` in [src/templates/email.ts](src/templates/email.ts#L156-L163) — HTML is assembled by string concatenation, so any new interpolated value must be escaped.
 
 ### Gallery flow
 
