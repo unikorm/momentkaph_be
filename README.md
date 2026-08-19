@@ -12,3 +12,5 @@ npm run build       # tsc           — type-check + emit to dist/
 npm run start       # node dist/index.js
 npm run fire-up     # typecheck → build → start
 ```
+
+more info in CLAUDE.md
