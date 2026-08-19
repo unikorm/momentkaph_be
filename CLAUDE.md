@@ -83,4 +83,4 @@ Required env vars: `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `CORS_METHODS`, `CORS_HEAD
 
 ## Related
 
-[notes.md](notes.md) (gitignored) tracks the owner's TODO backlog — infra hardening, bucket privacy, provider migration. It is a wishlist, not a description of current state; verify against the code before treating anything in it as implemented.
+[notes.md](notes.md) (gitignored) tracks the owner's TODO backlog. It is a wishlist, not a description of current state; verify against the code before treating anything in it as implemented.
