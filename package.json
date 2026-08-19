@@ -1,6 +1,6 @@
 {
   "name": "momentkaph_be",
-  "version": "1.6.10",
+  "version": "1.7.0",
   "description": "BE part of momentkaph.sk",
   "main": "dist/index.js",
   "type": "module",

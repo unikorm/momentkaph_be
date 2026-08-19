@@ -7,7 +7,7 @@ interface EmailPayload {
   html: string;
 }
 
-interface SendEmailResponse {
+export interface SendEmailResponse {
   id: string;
 }
 
@@ -26,15 +26,30 @@ export function sendEmail(payload: EmailPayload): Promise<SendEmailResponse> {
         },
       },
       (res) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          const data = JSON.parse(Buffer.concat(chunks).toString()) as SendEmailResponse;
-          if (res.statusCode === 200) {
-            resolve(data);
-          } else {
-            reject(new Error(`Resend ${res.statusCode}: ${JSON.stringify(data)}`));
+        let chunks: Buffer[] = [];
+        let received = 0;
+        res.on('data', (c: Buffer) => {
+          received += c.length;
+          if (received > 1024) { // Resend API responses are tiny, so this is a cheap sanity check
+            chunks = [];
+            res.destroy();
+            reject(new Error(`Response from Resend API too large: over 1024 bytes`));
+            return;
           }
+          chunks.push(c)
+        });
+        res.on('end', () => {
+          try {
+            const data = JSON.parse(Buffer.concat(chunks).toString()) as SendEmailResponse;
+            if (res.statusCode === 200) {
+              resolve(data);
+            } else {
+              reject(new Error(`Resend returned ${res.statusCode} and payload: ${JSON.stringify(data)}`));
+            }
+          } catch (err) {
+            reject(new Error(`Failed to parse response from Resend API: ${err instanceof Error ? err.message : String(err)}`));
+          }
+          chunks = [];
         });
       }
     );

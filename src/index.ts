@@ -6,8 +6,8 @@ import { cloudStorageHandler } from './handlers/cloudStorage.js';
 import { emailHandler } from './handlers/email.js';
 
 // Load .env before anything else
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 if (process.env.NODE_ENV !== 'production') {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const envPath = path.join(__dirname, '.env');
   if (fs.existsSync(envPath)) {
     for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {

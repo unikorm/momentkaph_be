@@ -15,6 +15,9 @@ export type ParseResult =
   | { status: 'ok'; value: ContactRequest }
   | { status: 'invalid'; errors: ValidationError[] }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_ALLOWED_CHARS = /^[\d\s+\-().]{7,30}$/;
+
 export function validateContactForm(data: ContactRequest): ParseResult {
 
   // Guard against non-object bodies — curl -d "hello" style payloads.
@@ -90,20 +93,17 @@ function parseMessage(value: string, errors: ValidationError[]): string {
   }
 
   if (isRepetitive(message)) {
-    errors.push({ field: 'message', message: 'Message looks like spam (repetition)' });
+    errors.push({ field: 'message', message: 'Message has repetitive content' });
     return message;
   }
 
   if (countLinks(message) > 1) {
-    errors.push({ field: 'message', message: 'Message looks like spam (links)' });
+    errors.push({ field: 'message', message: 'Message has more than one link' });
     return message;
   }
 
   return message;
 }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_ALLOWED_CHARS = /^[\d\s+\-().]{7,30}$/;
 
 function countDigits(s: string): number {
   return (s.match(/\d/g) ?? []).length;
@@ -123,5 +123,5 @@ function isRepetitive(s: string): boolean {
 function normalize(value: string, maxRawLength: number): string {
   if (typeof value !== 'string') return '';
   const capped = value.length > maxRawLength ? value.slice(0, maxRawLength + 1) : value;
-  return capped.trim().replace(/\s+/g, ' ');
+  return capped.trim().replace(/\s+/g, ' '); // collapse whitespace to single spaces
 }
