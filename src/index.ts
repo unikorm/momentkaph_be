@@ -23,6 +23,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const PORT = process.env.PORT!;
+const HOST = process.env.HOST!;
 
 const mustBeHeaders: Record<string, string> = process.env.NODE_ENV !== 'production' ? {
   'Access-Control-Allow-Origin': process.env.CORS_ORIGIN!,
@@ -65,4 +66,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(parseInt(PORT), () => console.log(`momentkaph_be listening on port ${PORT}`));
+server.listen(parseInt(PORT), HOST, () => console.log(`momentkaph_be listening on port ${PORT}`));
