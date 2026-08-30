@@ -29,18 +29,22 @@ if [ "$new_hash" != "$cur_hash" ]; then
   # fail before touching anything live if the tarball is malformed
   [ -f "$staging/nginx.conf" ] || { echo "tarball missing nginx.conf" >&2; exit 1; }
   [ -d "$staging/conf.d" ]     || { echo "tarball missing conf.d" >&2; exit 1; }
+  [ -d "$staging/snippets" ]   || { echo "tarball missing snippets" >&2; exit 1; }
   # back up current
   rm -rf "$NGINX_PREV"
   mkdir -p "$NGINX_PREV"
   mv "$NGINX_DEST/nginx.conf" "$NGINX_PREV/nginx.conf"
   mv "$NGINX_DEST/conf.d"     "$NGINX_PREV/conf.d"
+  mv "$NGINX_DEST/snippets"   "$NGINX_PREV/snippets"
   # install new
   mv "$staging/nginx.conf" "$NGINX_DEST/nginx.conf"
   mv "$staging/conf.d"     "$NGINX_DEST/conf.d"
+  mv "$staging/snippets"   "$NGINX_DEST/snippets"
   rollback() {
-    rm -rf "$NGINX_DEST/conf.d" "$NGINX_DEST/nginx.conf"
+    rm -rf "$NGINX_DEST/conf.d" "$NGINX_DEST/nginx.conf" "$NGINX_DEST/snippets"
     cp -a "$NGINX_PREV/nginx.conf" "$NGINX_DEST/nginx.conf"
     cp -a "$NGINX_PREV/conf.d"     "$NGINX_DEST/conf.d"
+    cp -a "$NGINX_PREV/snippets"   "$NGINX_DEST/snippets"
     nginx -t || echo "WARNING: restored config also fails, manual intervention needed" >&2
   }
   if ! nginx -t; then
