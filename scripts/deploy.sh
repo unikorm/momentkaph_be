@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+INBOX="$HOME/incoming"
 APP_DIR=/opt/momentkaph_be
 APP_NAME=momentkaph_be
-NGINX_DEST=/etc/nginx
-NGINX_PREV=/etc/nginx/.prev
 
 # ---- BE: swap dist, keep previous for rollback, atomic replace ----
 staging=$(mktemp -d "$APP_DIR/.dist.new.XXXXXX")
@@ -62,4 +61,5 @@ else
   echo "nginx unchanged -> skipping reload"
 fi
 
-rm -f /tmp/BE.tar.gz /tmp/nginx.tar.gz /tmp/nginx.hash /tmp/deploy.sh
+rm -f "$INBOX/BE.tar.gz" "$INBOX/nginx.tar.gz" "$INBOX/nginx.hash" "$INBOX/deploy.sh"
+echo "deploy OK"
