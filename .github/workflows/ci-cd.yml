@@ -114,7 +114,7 @@ jobs:
         run: |
             scp -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
-            BE.tar.gz nginx.tar.gz nginx.hash scripts/deploy.sh \
+            BE.tar.gz nginx.tar.gz nginx.hash \
             "$TARGET:incoming/"
 
       - name: Deploy
@@ -122,5 +122,5 @@ jobs:
             ssh -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
             "$TARGET" \
-            'bash incoming/deploy.sh'
+            'sudo -n /usr/local/sbin/momentkaph-deploy'
 
