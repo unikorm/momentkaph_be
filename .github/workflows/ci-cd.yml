@@ -67,7 +67,6 @@ jobs:
             BE.tar.gz
             nginx.tar.gz
             nginx.hash
-            scripts/*
 
   release:
     name: release
@@ -89,12 +88,14 @@ jobs:
             BE.tar.gz
             nginx.tar.gz
             nginx.hash
-            scripts/*
 
   deploy:
     name: deploy
     needs: [build, release]
     runs-on: ubuntu-latest
+
+    env:
+      TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
 
     steps:
       - uses: actions/download-artifact@v7
@@ -112,12 +113,14 @@ jobs:
       - name: Ship artifacts
         run: |
             scp -i ~/.ssh/deploy_key \
-              BE.tar.gz nginx.tar.gz nginx.hash scripts/* \
-              "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/tmp/"
+            -o BatchMode=yes \
+            BE.tar.gz nginx.tar.gz nginx.hash \
+            "$TARGET:incoming/"
 
       - name: Deploy
         run: |
             ssh -i ~/.ssh/deploy_key \
-              "${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}" \
-              'chmod +x /tmp/deploy.sh && bash /tmp/deploy.sh'
+            -o BatchMode=yes \
+            "$TARGET" \
+            'sudo -n /usr/local/sbin/momentkaph-deploy'
 
